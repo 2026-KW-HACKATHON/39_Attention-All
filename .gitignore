@@ -1,0 +1,23 @@
+# Environment variables
+.env
+.env.*
+
+# Android local settings
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Build outputs
+.gradle/
+build/
+*/build/
+
+# Signing keys
+*.jks
+*.keystore
+
+# OS files
+.DS_Store
+Thumbs.db
