@@ -106,7 +106,7 @@
   U.openRun = () => {
     const s = U.liveSession(); if (!s) return;
     if (U.sessionRule(s) !== 'RESUME') return nav.push('sheet', 'resume', {});
-    if (!nav.find('run')) nav.push('screen', 'run', { dark: true, title: '운동 중' });
+    if (!nav.find('run')) nav.push('screen', 'run', { dark: s.mode === 'RUN', title: '운동 중' });
   };
   A['open-run'] = () => U.openRun();
   U.startWorkout = async modeOverride => {

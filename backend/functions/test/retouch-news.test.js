@@ -29,7 +29,7 @@ test('legacy news edits preserve omitted metadata and publication history; null 
   assert.equal(d.news.news.published, true);
   assert.equal(d.news.news.publishedAt, now - 10);
   assert.equal(d.news.news.createdAt, now - 20);
-  assert.equal(d.news.news.sourceUrl, null);
+  assert.equal(d.news.news.sourceUrl, 'https://example.com/');
   const clears = Object.fromEntries(Object.keys(metadata).map(key => [key, null]));
   mutate(d, auth, 'upsertNews', { ...base, ...clears }, now + 1);
   for (const key of Object.keys(metadata)) assert.equal(d.news.news[key], null, key);

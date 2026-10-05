@@ -5,3 +5,11 @@ export function newsForHTML(n){
 export function participationPayload(payload,activeSessionId){
  return {...payload,...(!Object.hasOwn(payload,'sessionId')&&activeSessionId?{sessionId:activeSessionId}:{})};
 }
+export function newsPayload(entries){
+ const data=Object.fromEntries(entries);
+ for(const field of ['sourceUrl','topic','status','kind','source','date','dateKind','pub','pubKind','checked','event','summary'])if(data[field]==='')delete data[field];
+ if(data.clearPub==='on')data.pub=null;
+ if(data.clearChecked==='on')data.checked=null;
+ delete data.clearPub;delete data.clearChecked;
+ return data;
+}

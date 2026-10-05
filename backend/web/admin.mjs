@@ -1,3 +1,4 @@
+import {newsPayload} from './contract-adapter.mjs?v=20261005-r3';
 import {createClient} from './firebase-client.mjs?v=20261005-r3';import {allPages} from './state-adapter.mjs?v=20261005-r3';
 const client=await createClient(),$=id=>document.getElementById(id),status=msg=>$('status').textContent=msg,requests=new Map();let ready=false;
 const task=fn=>async e=>{e?.preventDefault();try{await fn(e);}catch(err){status(err.message||'요청 실패');}};
@@ -13,6 +14,6 @@ $('merchant').onsubmit=task(async e=>{const d=Object.fromEntries(new FormData(e.
 $('pilot').onsubmit=task(e=>mutate('configurePilot',JSON.parse(e.target.elements.json.value)));
 client.onUser(async user=>{ready=false;$('admin').hidden=true;if(!user){status('관리자 계정으로 로그인해주세요.');return;}try{ready=(await user.getIdTokenResult()).claims.admin===true;if(!ready){status('로그인했지만 관리자 권한이 없어요.');return;}$('admin').hidden=false;await refresh();status('관리자 권한 확인됨');}catch(e){status(e.message);}});
 
-$('news').onsubmit=task(e=>{const d=Object.fromEntries(new FormData(e.target));for(const k of ['topic','status','kind','source','date','dateKind','event','summary'])if(!d[k])delete d[k];return mutate('upsertNews',d);});
+$('news').onsubmit=task(e=>{return mutate('upsertNews',newsPayload(new FormData(e.target)));});
 
 if(client.emulator&&client.config.projectId==='demo-uirun'){$('local-login').hidden=false;$('local-login').onclick=task(async()=>{const {signInWithEmailAndPassword}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');await signInWithEmailAndPassword(client.auth,'admin@verification.test','Local-only-12345');});}

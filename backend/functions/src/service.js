@@ -289,7 +289,7 @@ function readModel(d, auth, name, data = {}, now = Date.now()) {
       ),
     };
   if (name === "getRunDetail")
-    { const session=own(d.sessions,data.sessionId,uid); return {...clean(session),exposures:(session.exposureIds||[]).map(id=>d.exposures[id]).filter(e=>e?.uid===uid).map(clean),metrics:W.runMetrics(session),participationStats:Participation.stats(Participation.rows(d,uid,session.id)),participations:page(Participation.rows(d,uid,session.id),data,"observedAt")}; }
+    { const stored=own(d.sessions,data.sessionId,uid),session={...stored,activeMs:stored.activeMs+(stored.status==='ACTIVE'?Math.max(0,now-stored.lastResumeAt):0)}; return {...clean(session),exposures:(session.exposureIds||[]).map(id=>d.exposures[id]).filter(e=>e?.uid===uid).map(clean),metrics:W.runMetrics(session),participationStats:Participation.stats(Participation.rows(d,uid,session.id)),participations:page(Participation.rows(d,uid,session.id),data,"observedAt")}; }
   if (name === "getMy")
     return {
       ...userDTO(d, uid),

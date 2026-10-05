@@ -21,6 +21,7 @@ export async function verify({clients,jpeg,contracts,emit}) {
  await step('GPS 전송',async()=>{const x=await call('user','appendTrack',payload);assert(x.count===2);return x});
  await step('같은 요청 재전송: GPS 중복 없음',async()=>{const x=await call('user','appendTrack',payload);assert(x.count===2);return x});
  await step('같은 ID의 다른 요청 충돌 차단',()=>call('user','appendTrack',{...payload,points:payload.points.slice(0,1)},'REQUEST_CONFLICT'));
+ await step('진행 중 운동 시간 재조회',async()=>{const x=await call('user','getRunDetail',{sessionId:run.sessionId});assert(x.activeMs>=1000&&x.metrics.activeMs===x.activeMs);return {activeMs:x.activeMs}});
  await step('미션 노출',()=>call('user','recordMissionExposure',{sessionId:run.sessionId,loc:loc()}));
  await step('일시정지',()=>call('user','pauseRun',{sessionId:run.sessionId}));await step('재개',()=>call('user','resumeRun',{sessionId:run.sessionId}));
  await step('미동기화 종료 차단',()=>call('user','finishRun',{sessionId:run.sessionId,expectedTrackCount:3},'TRACK_NOT_SYNCED'));

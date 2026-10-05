@@ -83,7 +83,7 @@ type MutationFailure = {ok:false;errorCode:string;details?:object;retryable?:boo
 - `UserSummary`: displayName, uiMode(DEFAULT/SIMPLE), repeatObservationNotifications, pointsBalance, pointsPending, welcomeStatus(LOCKED/PENDING_ADMIN/APPROVED/ISSUED/SOLD_OUT).
 - `Issue`: id, categoryCode/categoryLabel, anchor, observationAnchors, pathSegmentId/corridorSegmentId, verificationLevel(NONE/PEER/ADMIN), createdAt, lastPhotoObservedAt, lifecycleStatus(OPEN/CLOSED/RESOLVED), eventEndsAt, creatorPhotoDeadlineAt, availablePhotoCount, todaySignalAccountCount 등. **creatorUid·타인 신원·사진 Storage 경로는 공개 DTO에 없음**. `own`은 상세 응답에 별도 boolean. 지도 전체 목록만으로 소유자를 추정하지 않는다.
 - `RiverSummary`: currentCount,pastCount,latest(Issue|null),updatedAt(number|null). 현재=OPEN이면서 이벤트/종류별 사진 유효시간 안. 과거 기록도 제보 근거이지 확정 수질 판정이 아니다.
-- `SessionSummary`: id,mode,courseId,status,startedAt,endedAt?,activeMs,distanceM,pauses,exposureIds 등; track 없음. 상세에서 track과 본인 exposure들을 읽는다.
+- `SessionSummary`: id,mode,courseId,status,startedAt,endedAt?,activeMs,distanceM,pauses,exposureIds 등; track 없음. 상세에서 track과 본인 exposure들을 읽는다. ACTIVE 상세의 activeMs는 조회 시점까지 마지막 재개 이후 경과 시간을 포함하며, PAUSED는 늘어나지 않는다.
 - `TrackPoint`(응답): lat,lng,acc,recordedAt,t,altitudeM,segment. **입력 accuracyM / 응답 acc**, recordedAt은 epoch ms이고 응답 t도 epoch ms. HTML의 시작 후 상대시간 t와 혼용하지 않는다. segment가 다른 좌표를 선으로 연결하지 않는다.
 - `Observation`: 본인 기록, modality,role,issueId?/missionId?,photo?:{id,path},observedAt,acceptedAt?,visibility,reward,points,pointsPending. **photo 객체를 img.src에 넣지 않는다**. photo.id로 getPhotoAccess 조회. 원 제보가 숨김/삭제돼도 참여 기록은 남을 수 있으므로 제목은 안전한 대체 문구 사용.
 - `PublicObservation`: id,modality,observedAt,acceptedAt,role만. 공개 상세에는 사용자/사진 없음.
@@ -207,7 +207,7 @@ configurePilot: paths 필수(배열≤200), 각각 `{id,corridorId,points:[lat,l
 - routines: `{id,name,anchors:[lat,lng][],roundHours?,enabled:boolean,...}` anchors1~100, roundHours 기본6/1~24 정수/24의 약수. 기존 rounds는 서버 보존.
 - news: 기존 시안 데이터 형식; 신규 운영 소식은 upsertNews 사용 권장. paths만 갱신해도 전송 코스와 위치 범위를 함께 검수.
 
-upsertNews: id≤80/title≤160/body≤10000/type≤40자(기본NOTICE), sourceUrl은 http(s)만 허용. 저장 시 기존 공개 상태 보존, 신규는 초안. 공개/비공개는 setNewsPublished 별도 호출. 첫 공개시 publishedAt 기록. URL에 credentials 또는 javascript: 금지.
+upsertNews: id≤80/title≤160/body≤10000/type≤40자(기본NOTICE), sourceUrl은 http(s)만 허용하며 생략하면 기존 링크 유지, null이면 제거한다. 저장 시 기존 공개 상태 보존, 신규는 초안. 공개/비공개는 setNewsPublished 별도 호출. 첫 공개시 publishedAt 기록. URL에 credentials 또는 javascript: 금지.
 
 ## 8. 오류와 재시도
 
@@ -267,3 +267,5 @@ appendTrack 선택 입력 `altitudeAccuracyM`(0~10000, 없으면 null), 응답 T
 getMy 추가 `participationStats:{total,report,recheck,routine,recheckPhoto,recheckQuick,photo}`. 페이지 제한과 무관한 전체 본인 합계이며 숨김/늦은사진/보완사진 중복은 제외한다. getRunDetail도 같은 participationStats와 해당 세션의 `participations:Page<Observation>`를 반환한다. 상세에 limit/cursor 선택값으로 참여 목록만 페이지 이동하며 track/metrics는 전체다. Observation의 sessionId는 서버 확인된 경우에만 존재한다.
 
 공개 사본 경로는 관리자 UID와 요청 전체의 해시를 포함하며, Storage의 생성 전용 조건으로 덮어쓰기를 방지한다. 동시 요청 충돌로 연결되지 않은 사본은 해당 사진 기록이 삭제된 뒤, 파일 생성으로부터 최소 1시간 경과한 경우 정리 스케줄에서 삭제한다. 사진 기록이 남아 있는 동안에는 재시도와 삭제의 충돌을 방지하기 위해 그 사진의 사본 경로를 보호한다. 동일 요청의 진행 중 사본을 지우지 않기 위해 실패 직후에는 삭제하지 않는다.
+
+웹 연결 화면은 미전송 GPS 요청을 계정별 localStorage에 보관하고 같은 요청 ID로 재전송한다. 로그아웃·계정 전환 시 지우며 저장소 접근 실패는 운동 화면에 표시한다. 탭을 다시 열면 getMy.activeSession → getRunDetail로 서버 기록과 대기 요청을 복구한다.

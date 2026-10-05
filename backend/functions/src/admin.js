@@ -21,9 +21,9 @@ function newsMetadata(x,old){
 function mutate(d,auth,name,x,now){
  if(!auth.admin)V.fail('PERMISSION_DENIED');const id=V.text(x.id,80);
  if(name==='upsertNews'){
-  const title=V.text(x.title,160),body=V.text(x.body,10000);let sourceUrl=null;
+  const old=d.news[id],title=V.text(x.title,160),body=V.text(x.body,10000);let sourceUrl=Object.hasOwn(x,'sourceUrl')?null:(old?.sourceUrl??null);
   if(x.sourceUrl){try{const u=new URL(x.sourceUrl);if(!['https:','http:'].includes(u.protocol)||u.username||u.password)throw Error();sourceUrl=u.href;}catch{V.fail('INVALID_ARGUMENT');}}
-  const old=d.news[id],metadata=newsMetadata(x,old);d.news[id]={id,title,body,sourceUrl,type:V.text(x.type||'NOTICE',40),...metadata,published:old?.published??false,publishedAt:old?.publishedAt??null,createdAt:old?.createdAt??now,updatedAt:now};
+  const metadata=newsMetadata(x,old);d.news[id]={id,title,body,sourceUrl,type:V.text(x.type||'NOTICE',40),...metadata,published:old?.published??false,publishedAt:old?.publishedAt??null,createdAt:old?.createdAt??now,updatedAt:now};
  }else{if(typeof x.published!=='boolean')V.fail('INVALID_ARGUMENT');if(!d.news[id])V.fail('NOT_FOUND');d.news[id].published=x.published;if(x.published&&!d.news[id].publishedAt)d.news[id].publishedAt=now;d.news[id].updatedAt=now;}
  const auditId=randomUUID();d.adminAudits[auditId]={id:auditId,uid:auth.uid,action:name,targetId:id,at:now};return {ok:true,id};
 }

@@ -8,6 +8,8 @@ npm ci
 npm --prefix functions ci
 npm test
 npm run check
+# 서버·보안 규칙·사진 업로드·탈퇴를 로컬에서 순서대로 검증
+npm run test:integration
 npm run emulators
 ```
 
@@ -18,6 +20,8 @@ node backend/verification/server.cjs
 ```
 
 http://127.0.0.1:5179/backend/verification/ 에서 API 검증 버튼을 누른다. demo-uirun 데이터만 초기화한다. 테스트 결과는 무시되는 output/에 생성된다.
+
+GitHub Actions에서도 동일한 단위·통합 테스트를 실행한다. 배포는 자동으로 하지 않는다.
 
 프론트는 [API 명세](../docs/api/FRONTEND.md)를 따른다. functions/src/는 서버, web/는 연결 검토 화면, client/api.ts는 RN 호출 예시다. 웹은 web/retouch/를 직접 수정한다. Firebase 클라이언트 JSON은 공개 설정이며 서비스 계정 키/CLI 토큰은 포함하지 않는다.
 

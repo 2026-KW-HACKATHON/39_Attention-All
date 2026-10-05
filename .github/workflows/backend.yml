@@ -1,0 +1,45 @@
+name: Backend verification
+on:
+  push:
+    branches: [main]
+    paths: ['backend/**', 'docs/api/**', '.github/workflows/backend.yml']
+  pull_request:
+    paths: ['backend/**', 'docs/api/**', '.github/workflows/backend.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: backend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm --prefix functions ci
+      - run: npm test
+      - run: npm run check
+      - run: npm run test:integration
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-verification
+          path: output/uirun-api-*.json
+          if-no-files-found: ignore
+          retention-days: 7
