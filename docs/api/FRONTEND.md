@@ -3,6 +3,31 @@
 버전: 2026-10-05 / 프로젝트 `uirun-92539` / Functions `asia-northeast3` / Node22.
 현재 49개 HTTPS Callable + 사진 처리 이벤트 1개 + 정리 스케줄 1개다. 이벤트·스케줄은 앱에서 호출하지 않는다.
 
+## 모바일 프론트 연결 시작
+
+현재 Firebase에는 웹 앱만 등록되어 있다(2026-10-05 확인). 실제 React Native 앱은 아직 빌드·검증하지 않았다. 아래는 기존 `@react-native-firebase` 호출 예시를 사용하는 경우의 연결 절차이며, 프론트 프로젝트에서 설치 버전을 확정한다.
+
+1. 프론트가 Android `applicationId`와 iOS `bundleIdentifier`를 확정해 백엔드 담당자에게 전달한다. 백엔드는 기존 프로젝트에 각각 앱을 등록하고 `google-services.json` / `GoogleService-Info.plist`를 제공한다. 웹 firebase-config.json으로 네이티브 앱 등록을 대신하지 않는다.
+2. Expo를 사용하면 Development Build가 필요하다. 앱 프로젝트에 `@react-native-firebase/app`, `auth`, `functions`, `storage`, `app-check`를 설치하고 각 플랫폼 설정을 적용한다. Google 로그인 라이브러리와 앱 서명 SHA, iOS URL scheme도 함께 설정한다.
+3. Android Play Integrity, iOS App Attest 등 플랫폼 App Check를 등록하고 앱 시작 시 초기화한 뒤 API를 호출한다. 개발 빌드의 debug provider는 Firebase에 해당 debug token 등록이 필요하다. 토큰은 개인 로컬 설정으로 관리하고 커밋하지 않는다. 웹 reCAPTCHA 키를 네이티브에 재사용하지 않는다.
+4. `backend/client/api.ts`, `mobile-config.json`, `connection-check.js`, `connection-check.d.ts`를 프론트 서비스 폴더에 복사한다. TypeScript는 JSON import(`resolveJsonModule`)를 지원하도록 설정한다. 이 파일들에는 서버 인증 비밀값이 없다.
+5. App Check 준비 후 아래 공개 연결 점검을 실행한다. 실제 Google 로그인 credential을 Firebase Auth에 교환한 뒤 본인 API도 점검한다. 실패 시 `checks[].code`를 확인한다. 이 점검은 조회만 수행하며 동의·운동·제보·혜택 데이터를 만들지 않는다.
+
+```ts
+import {api} from './api';
+import {checkConnection} from './connection-check';
+const publicReport = await checkConnection(api);
+// Firebase Auth 로그인 완료 후 실행한다.
+const signedInReport = await checkConnection(api, {authenticated:true});
+// report.ok와 checks만 개발 화면에 표시한다. 전체 API 응답이나 토큰을 로깅하지 않는다.
+```
+
+현재 서버용 수동 `.env`/서비스 계정 키 전달은 필요 없다. `mobile-config.json`의 projectId/리전/동의 버전은 공개 연결 상수다. Google 웹 client ID, 지도 SDK client key 등 추가 값은 프론트 라이브러리 선정과 앱 등록 뒤 해당 SDK 방식에 맞춰 제공한다. 실제 지도 SDK 공급자/키는 아직 확정하지 않았다. Expo의 `EXPO_PUBLIC_*`는 앱에 포함되는 공개 값이므로 관리자 인증값을 넣지 않는다.
+
+담당 구분: 프론트는 화면, Google 로그인 UI, 권한, GPS 수집/백그라운드 실행, 카메라와 로컬 큐를 구현한다. 백엔드는 모바일 Firebase 등록·인증 설정, 서버 검증·저장·집계, API 오류 수정과 운영 권한을 담당한다. 현재 HTML 구현은 디자인/웹 검증 참고이며 모바일 기능 완성을 의미하지 않는다.
+
+공식 참고: [Expo Firebase](https://docs.expo.dev/guides/using-firebase/), [Expo Google 로그인](https://docs.expo.dev/guides/google-authentication/), [네이티브 App Check](https://rnfirebase.io/app-check/usage).
+
 ## 1. 연결과 공통 규칙
 
 Firebase HTTPS Callable 프로토콜을 사용한다. 일반 REST URL에 임의 JSON을 보내는 방식보다 Firebase SDK `httpsCallable` 사용을 권장한다. 로그인·App Check 토큰은 SDK가 자동 전달한다. 공개 조회도 운영 환경에서는 **App Check가 필요**하다.

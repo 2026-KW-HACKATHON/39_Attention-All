@@ -1,12 +1,15 @@
 // React Native Firebase adapter. Install @react-native-firebase/app, auth, functions, storage.
 // Google sign-in supplies Firebase Auth credentials separately. UID never goes in payloads.
+// Initialize native App Check before calling this adapter (including public APIs).
+// Native Firebase app configuration comes from the registered Android/iOS files.
+import config from "./mobile-config.json";
 import functions from "@react-native-firebase/functions";
 import storage from "@react-native-firebase/storage";
 export const api = async <T>(
   name: string,
   payload: Record<string, unknown> = {},
 ): Promise<T> => {
-  const response = await functions(undefined, "asia-northeast3").httpsCallable(
+  const response = await functions(undefined, config.functionsRegion).httpsCallable(
     name,
   )(payload);
   return response.data as T;
