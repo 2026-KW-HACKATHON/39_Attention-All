@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#384BF0">
+<link rel="icon" href="assets/brand/uirun-icon-64.png">
+<title>우이런 프로토타입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,500..900;1,62..125,500..900&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="css/app.css?v=20261005-r3">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3.5 6.2V20L9 18l6 2 5.5-2.2V4L15 6z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-records" viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-9"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.2-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.5 8h3.2l1.8-2.5h7L17.3 8h3.2v11h-17z"/><circle cx="12" cy="13.2" r="3.4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+  <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3.5s6 6.6 6 10.9a6 6 0 0 1-12 0C6 10.1 12 3.5 12 3.5z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8.5 6-14 15-14 0 9-5.5 15-14 15"/><path d="M5 19c3-4 6-6.5 9.5-8.5"/></symbol>
+  <symbol id="i-bench" viewBox="0 0 24 24"><path d="M3.5 10h17M5 10V7.5h14V10M5.5 10v8M18.5 10v8M3.5 14h17"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2.5 9c2.2-2 4.3-2 6.4 0s4.3 2 6.4 0 4.3-2 6.2 0M2.5 15c2.2-2 4.3-2 6.4 0s4.3 2 6.4 0 4.3-2 6.2 0"/></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8.5h11a2.8 2.8 0 1 0-2.8-2.8M3 12.5h15.5a2.8 2.8 0 1 1-2.8 2.8M3 16.5h8"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 0-5.3 4.8L4.5 16 8 19.5l4.7-4.7a4 4 0 0 0 4.8-5.3l-2.6 2.6-2.4-.5-.5-2.4z"/></symbol>
+  <symbol id="i-wc" viewBox="0 0 24 24"><path d="M7 4h4.5v6.5H7zM4.5 10.5h15A7.5 7.5 0 0 1 12 18a7.5 7.5 0 0 1-7.5-7.5zM9 18l-.8 2.5h7.6L15 18"/></symbol>
+  <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.5-7h6L18 16M9.5 9 12 16H6M13.5 6.5H16"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4M5.5 4.5h11l-2 4 2 4h-11"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6.5a3 3 0 0 0 0-6h-5a3 3 0 0 1 0-6H16"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5h17v3a1.8 1.8 0 0 0 0 3.5v3h-17v-3a1.8 1.8 0 0 0 0-3.5z"/><path d="M14.5 8v9" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 19.5 6v5.5c0 4.6-3.2 8-7.5 9-4.3-1-7.5-4.4-7.5-9V6z"/></symbol>
+  <symbol id="i-coins" viewBox="0 0 24 24"><ellipse cx="9.5" cy="7" rx="5.5" ry="2.5"/><path d="M4 7v4c0 1.4 2.5 2.5 5.5 2.5S15 12.4 15 11V7"/><path d="M9 15.4V17c0 1.4 2.5 2.5 5.5 2.5S20 18.4 20 17v-4c0-1.4-2.5-2.5-5.5-2.5"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18M12 9v11M12 9c-1.5-3.5-5.5-4-5.5-1.5S9.5 9 12 9zm0 0c1.5-3.5 5.5-4 5.5-1.5S14.5 9 12 9z"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6M12 16.6v.3"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5v-5a6 6 0 1 1 12 0v5l1.5 1.5h-15zM10 20.5h4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4.5v4.2h4.2"/><path d="M12 8v4.3l3 1.8"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 3.5l3 3-3 3M4 11.5v-2a3 3 0 0 1 3-3h13M7 20.5l-3-3 3-3M20 12.5v2a3 3 0 0 1-3 3H4"/></symbol>
+  <symbol id="i-tap" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.6 2.6 4.9-5.1"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-river" viewBox="0 0 24 24"><path d="M7 13.5C7 8.6 10.6 4.6 17 4c.5 6-2.8 9.8-7.6 9.8-.9 0-1.7-.1-2.4-.3z"/><path d="M7 13.5 12 9"/><path d="M3 18.5c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></symbol>
+  <symbol id="i-wx-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
+  <symbol id="i-wx-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z"/></symbol>
+  <symbol id="i-wx-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10.3a3.7 3.7 0 0 0 .4-7.4 5.5 5.5 0 0 0-10.6 1.2A3.1 3.1 0 0 0 7 18.5z"/></symbol>
+  <symbol id="i-wx-cloud-sun" viewBox="0 0 24 24"><path d="M8.6 7.4a3.4 3.4 0 0 1 5.7-1.3M8.4 2.6v1.6M3.6 7.4h1.6M4.9 3.9l1.1 1.1M11.9 3.9l-1.1 1.1"/><path d="M7.5 20h9.8a3.4 3.4 0 0 0 .4-6.8 5 5 0 0 0-9.7 1.1A2.9 2.9 0 0 0 7.5 20z"/></symbol>
+  <symbol id="i-wx-cloud-moon" viewBox="0 0 24 24"><path d="M12.6 7.6a4.6 4.6 0 0 1-5.4-5.3 4.6 4.6 0 1 0 5.4 5.3z"/><path d="M7.5 20h9.8a3.4 3.4 0 0 0 .4-6.8 5 5 0 0 0-9.7 1.1A2.9 2.9 0 0 0 7.5 20z"/></symbol>
+  <symbol id="i-wx-rain" viewBox="0 0 24 24"><path d="M7 15h10.3a3.7 3.7 0 0 0 .4-7.4 5.5 5.5 0 0 0-10.6 1.2A3.1 3.1 0 0 0 7 15z"/><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5"/></symbol>
+  <symbol id="i-wx-snow" viewBox="0 0 24 24"><path d="M7 14.5h10.3a3.7 3.7 0 0 0 .4-7.4 5.5 5.5 0 0 0-10.6 1.2A3.1 3.1 0 0 0 7 14.5z"/><path d="M8.5 18.5h.01M12 20h.01M15.5 18.5h.01" stroke-width="3"/></symbol>
+  <symbol id="i-wx-fog" viewBox="0 0 24 24"><path d="M4 9h16M3 13h18M5 17h14"/></symbol>
+  <symbol id="i-wx-storm" viewBox="0 0 24 24"><path d="M7 14.5h10.3a3.7 3.7 0 0 0 .4-7.4 5.5 5.5 0 0 0-10.6 1.2A3.1 3.1 0 0 0 7 14.5z"/><path d="M12.5 15.5l-2 3h3l-2 3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5 4.5 4"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8M5 12.5V20h14v-7.5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14.5l6-6 6 6"/></symbol>
+  <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 6.4-.6M5 12.8a10 10 0 0 1 5-2.6M19 12.8a10 10 0 0 0-3.2-2.2M2 9a14.5 14.5 0 0 1 4.5-2.7M12 5.5A14.5 14.5 0 0 1 22 9"/></symbol>
+</svg>
+
+<div class="stage">
+  <div id="app" class="phone">
+    <div id="map-host" hidden></div>
+    <main id="view"></main>
+    <nav id="tabbar" class="tabbar" aria-label="주요 메뉴"></nav>
+    <div id="stack"></div>
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+    <div id="sys-root" class="sys-root" hidden></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="js/geo.js?v=20261005-r3"></script>
+<script src="js/policy.js?v=20261005-r3"></script>
+<script src="js/data.js?v=20261005-r3"></script>
+<script src="js/services.js?v=20261005-r3"></script>
+<script src="js/app.js?v=20261005-r3"></script>
+<script src="js/flows.js?v=20261005-r3"></script>
+
+<script type="module" src="../bridge.mjs?v=20261005-r3"></script>
+</body>
+</html>

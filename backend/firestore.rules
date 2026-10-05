@@ -1,0 +1,8 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  // All domain reads/writes go through authenticated Callable DTOs.
+  // Includes PIN hashes, personal GPS, receipts and the policy ledger.
+  match /{document=**} { allow read, write: if false; }
+ }
+}

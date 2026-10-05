@@ -1,0 +1,605 @@
+{
+  "version": "2026-10-05",
+  "projectId": "uirun-92539",
+  "region": "asia-northeast3",
+  "transport": "Firebase HTTPS Callable",
+  "consentVersion": "v2-2026-10",
+  "note": "Inventory, not a complete JSON Schema. Optional fields/limits/results/errors in FRONTEND.md.",
+  "apis": [
+    {
+      "name": "getHome",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getMapData",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getRiverFeed",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getIssueDetail",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "issueId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getRoutineDetail",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "missionId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getRecords",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getRunDetail",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "sessionId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getMy",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getLedger",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getBenefits",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getSettings",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getPilotData",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getWorkoutStats",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getAdminQueue",
+      "kind": "read",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getAdminIssue",
+      "kind": "read",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "issueId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getDeletionJob",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getWeather",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getPhotoStatus",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "ticketId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getPhotoAccess",
+      "kind": "read",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "photoId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "getPublicPhotoAccess",
+      "kind": "read",
+      "auth": "public",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "photoId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "setPhotoPublication",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "photoId",
+        "published",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "recordConsent",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "version",
+        "accepted",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "updateProfile",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "displayName",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "updateSettings",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "startRun",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "mode",
+        "loc",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "appendTrack",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "sessionId",
+        "points",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "pauseRun",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "sessionId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "resumeRun",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "sessionId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "finishRun",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "sessionId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "discardRun",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "sessionId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "recordMissionExposure",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "sessionId",
+        "loc",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "issueCaptureTicket",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "purpose",
+        "loc",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md",
+      "conditionalRequired": {
+        "DISCOVERY": [
+          "categoryCode"
+        ],
+        "RECHECK": [
+          "targetId"
+        ],
+        "DISCOVERY_PHOTO": [
+          "targetId"
+        ],
+        "ROUTINE": [
+          "targetId"
+        ]
+      }
+    },
+    {
+      "name": "sealCapture",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "ticketId",
+        "loc",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "submitQuick",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "issueId",
+        "loc",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "submitPhotoRecheck",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "issueId",
+        "ticketId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "createIssue",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "categoryCode",
+        "modality",
+        "pin",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md",
+      "conditionalRequired": {
+        "QUICK": [
+          "loc"
+        ],
+        "PHOTO": [
+          "ticketId"
+        ]
+      }
+    },
+    {
+      "name": "addDiscoveryPhoto",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "issueId",
+        "ticketId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "submitRoutine",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "missionId",
+        "ticketId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "claimWelcome",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "requestCouponUse",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "couponId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "confirmCouponUse",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "couponId",
+        "useSessionId",
+        "pin",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "adminDecision",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "issueId",
+        "decision",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "configurePilot",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "paths",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "configureMerchant",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "id",
+        "name",
+        "pin",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "approveWelcome",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "userId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "withdrawContribution",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": true,
+      "required": [
+        "observationId",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "deleteMyAccountData",
+      "kind": "mutation",
+      "auth": "user",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "confirm",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "upsertNews",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "id",
+        "title",
+        "body",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    },
+    {
+      "name": "setNewsPublished",
+      "kind": "mutation",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [
+        "id",
+        "published",
+        "clientRequestId"
+      ],
+      "details": "FRONTEND.md"
+    }
+  ],
+  "events": [
+    {
+      "name": "processEvidence",
+      "trigger": "Storage object finalized",
+      "clientCallable": false
+    },
+    {
+      "name": "hourlyMaintenance",
+      "trigger": "every 60 minutes",
+      "clientCallable": false
+    }
+  ]
+}

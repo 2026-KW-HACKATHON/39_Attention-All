@@ -1,0 +1,7 @@
+node_modules/
+*-debug.log
+.env*
+!.env.example
+.firebase/
+seed.local.json
+service-account*.json

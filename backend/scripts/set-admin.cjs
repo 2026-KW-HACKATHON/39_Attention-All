@@ -1,0 +1,4 @@
+// Explicit operator tool: never automatically grants a role to every signed-in user.
+const {connect,project}=require('./cloud-client.cjs');
+const uid=process.argv[2],grant=process.argv[3];if(!uid||!['grant','revoke'].includes(grant))throw Error('Usage: node scripts/set-admin.cjs FIREBASE_UID grant|revoke');
+(async()=>{const make=await connect(),c=make('https://identitytoolkit.googleapis.com','v1');const found=await c.post(`/projects/${project}/accounts:lookup`,{localId:[uid]});const user=found.body.users?.[0];if(!user||user.localId!==uid)throw Error('USER_NOT_FOUND');const claims=JSON.parse(user.customAttributes||'{}');if(grant==='grant')claims.admin=true;else delete claims.admin;await c.post(`/projects/${project}/accounts:update`,{localId:uid,customAttributes:JSON.stringify(claims)});console.log('Admin role',grant,'completed for explicitly selected Firebase UID. Sign out/in to refresh token.');})().catch(e=>{console.error(e.message);process.exit(1)});

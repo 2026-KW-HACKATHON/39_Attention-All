@@ -1,0 +1,71 @@
+{
+  "paths": [
+    {
+      "id": "DEMO-L",
+      "corridorId": "DEMO-W1",
+      "points": [
+        [
+          37.619,
+          127.05
+        ],
+        [
+          37.621,
+          127.05
+        ]
+      ]
+    },
+    {
+      "id": "DEMO-R",
+      "corridorId": "DEMO-W1",
+      "points": [
+        [
+          37.619,
+          127.0508
+        ],
+        [
+          37.621,
+          127.0508
+        ]
+      ]
+    }
+  ],
+  "courses": [
+    {
+      "id": "DEMO-C1",
+      "name": "로컬 테스트 코스",
+      "source": "DEMO",
+      "out": [
+        [
+          37.619,
+          127.05
+        ],
+        [
+          37.621,
+          127.05
+        ]
+      ],
+      "modes": [
+        "RUN",
+        "WALK"
+      ]
+    }
+  ],
+  "facilities": [],
+  "news": [],
+  "routines": [
+    {
+      "id": "DEMO-R1",
+      "name": "로컬 테스트 정기 기록",
+      "enabled": true,
+      "roundHours": 6,
+      "anchors": [
+        [
+          37.62,
+          127.05
+        ]
+      ],
+      "corridorSegmentId": "DEMO-W1",
+      "rounds": {}
+    }
+  ]
+}

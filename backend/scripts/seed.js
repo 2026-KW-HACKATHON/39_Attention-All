@@ -1,0 +1,5 @@
+// Emulator by default. Never seeds demo geometry or imaginary Issues into a remote project.
+const fs=require('node:fs');const requireFunctions=require('node:module').createRequire(require('node:path').resolve(__dirname,'../functions/package.json'));const{initializeApp}=requireFunctions('firebase-admin/app');
+const project=process.env.GCLOUD_PROJECT||'demo-uirun';if(!process.env.FIRESTORE_EMULATOR_HOST)throw Error('Set FIRESTORE_EMULATOR_HOST for local seed; use configurePilot admin API for live data.');
+initializeApp({projectId:project});const{transact}=require('../functions/src/store');const{execute}=require('../functions/src/service');
+const path=process.argv[2]||'seed.example.json';const data=JSON.parse(fs.readFileSync(path,'utf8'));transact(d=>execute(d,{uid:'seed-admin',admin:true},'configurePilot',{...data,clientRequestId:'seed-'+Date.now()},Date.now())).then(async()=>{console.log('Pilot seed loaded');await requireFunctions('firebase-admin/firestore').getFirestore().terminate();}).catch(e=>{console.error(e);process.exit(1)});

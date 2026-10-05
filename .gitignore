@@ -21,3 +21,20 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Node/Firebase local files
+node_modules/
+.firebase/
+*-debug.log
+*.log
+coverage/
+output/
+tmp/
+.calm-design/
+*.zip
+seed.local.json
+service-account*.json
+*service-account*.json
+*.pem
+*.p12
+*.key
