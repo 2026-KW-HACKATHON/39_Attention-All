@@ -154,7 +154,7 @@ type MutationFailure = {ok:false;errorCode:string;details?:object;retryable?:boo
 
 참여 행(`getRecords.participations`, `getRunDetail.participations`)에는 2026-10-06부터 `categoryCode`(관찰의 공개 종류, 없으면 null)가 붙는다. 목록 제목용이며 다른 필드는 그대로다.
 
-`occurredAt`(선택, 2026-10-06 추가): 오프라인 큐가 늦게 보낸 일시정지·재개의 실제 조작 시각(epoch ms). pause는 마지막 재개 시각·마지막 저장 위치점 이후, resume은 일시정지 시작 이후이고 둘 다 서버 현재 시각 이하만 허용(벗어나면 INVALID_ARGUMENT). finishRun·discardRun(2026-10-06 추가)은 ACTIVE면 마지막 재개·마지막 저장 위치점 이후, PAUSED면 일시정지 시작 이후 ~ 서버 현재 시각을 받고 그 시각을 `endedAt`으로 저장한다(따라서 그 뒤에 찍은 관찰은 세션에 연결되지 않는다). COMPLETED/RECOVERED 판정은 서버 수신 시각 기준 그대로다. 생략하면 기존처럼 서버 수신 시각이다. 기기 시계를 그대로 믿는 값이므로 활동 시간 표시에만 영향을 주며 보상 판단에는 쓰지 않는다.
+`occurredAt`(선택, 2026-10-06 추가): 오프라인 큐가 늦게 보낸 일시정지·재개의 실제 조작 시각(epoch ms). pause는 마지막 재개 시각·마지막 저장 위치점 이후, resume은 일시정지 시작 이후이고 둘 다 서버 현재 시각 + 2초까지 허용(GPS와 같은 기기 시계 오차)(벗어나면 INVALID_ARGUMENT). finishRun·discardRun(2026-10-06 추가)은 ACTIVE면 마지막 재개·마지막 저장 위치점 이후, PAUSED면 일시정지 시작 이후 ~ 서버 현재 시각 + 2초를 받고 그 시각을 `endedAt`으로 저장한다(따라서 그 뒤에 찍은 관찰은 세션에 연결되지 않는다). COMPLETED/RECOVERED 판정은 서버 수신 시각 기준 그대로다. 생략하면 서버 수신 시각을 쓰되, 이미 허용된 위치·재개·일시정지 시각보다 뒤로 돌아가지 않도록 하한을 적용한다. 기기 시계를 그대로 믿는 값이므로 활동 시간 표시에만 영향을 주며 보상 판단에는 쓰지 않는다.
 
 courseId 지정 시 등록된 코스이고 modes에 운동 종류가 포함되어야 한다. walk-only 코스를 RUN으로 시작하면 COURSE_MODE_NOT_SUPPORTED. courseId 생략 가능; 화면은 null 코스명 대체 표시 필요.
 

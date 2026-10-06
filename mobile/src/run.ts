@@ -150,7 +150,15 @@ function addPoints(locs: Location.LocationObject[]) {
 }
 
 // 위치 수집 시작. 실패하면(권한·서비스 거절) 운동은 그대로 두고 화면에 ‘위치 기록 꺼짐’을 알린다(조용히 넘어가지 않는다).
-async function startUpdates() {
+// UI 상태는 즉시 반영하지만 네이티브 시작·중지는 호출 순서대로 끝낸다.
+let locationTransition: Promise<unknown> = Promise.resolve();
+function queueLocation<T>(action: () => Promise<T>): Promise<T> {
+  const next = locationTransition.then(action);
+  locationTransition = next.catch(() => {});
+  return next;
+}
+const startUpdates = () => queueLocation(startUpdatesNow);
+async function startUpdatesNow() {
   if (await Location.hasStartedLocationUpdatesAsync(RUN_TASK).catch(() => false)) return true;
   try {
     await startService();
@@ -174,7 +182,8 @@ async function startService() {
     foregroundService: { notificationTitle: '우이런 운동 기록 중', notificationBody: '화면이 꺼져도 운동 경로를 기록해요. 앱에서 종료할 수 있어요.', notificationColor: '#384BF0' },
   });
 }
-async function stopUpdates() {
+const stopUpdates = () => queueLocation(stopUpdatesNow);
+async function stopUpdatesNow() {
   if (await Location.hasStartedLocationUpdatesAsync(RUN_TASK).catch(() => false)) await Location.stopLocationUpdatesAsync(RUN_TASK).catch(() => {});
 }
 

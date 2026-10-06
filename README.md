@@ -543,7 +543,7 @@ google-services.json
 | 기상 | 기상청 | 기온·강수·풍속 등 | 사용하지 않음(초기 기획) |
 | 대기질 | 에어코리아 | PM10·PM2.5 등 | 사용하지 않음(초기 기획) |
 | 지도 | OpenStreetMap 데이터 + Leaflet | 웹 미리보기의 지도·하천선·시설 | 웹에서 사용 중 |
-| 지도 | 모바일 지도 SDK | 앱 지도 | 미정(NAVER Maps 포함 검토 전) |
+| 지도 | Google Maps SDK for Android | 앱 지도 | 설정 완료·실기기 미검증 |
 | 사진 | 서울연구원 서울연구데이터서비스 | 코스 분위기 사진(공공누리 제1유형, 출처 표시) | 사용 중 |
 | 공공데이터 | 서울 열린데이터광장 / 공공데이터포털 | 하천·시설 관련 데이터 탐색 | 검토 중 |
 | 인증·서버 | Firebase | Auth·Functions·Firestore·Storage·App Check | 사용 중 |
@@ -577,7 +577,7 @@ google-services.json
 
 ### 실기기·운영 미검증
 
-- Android 앱 빌드·실행, 실제 Google 로그인, App Check(debug·Play Integrity), 재시작 후 복원, 계정 전환 — Firebase Android 앱 등록과 Android SDK 설치 후 확인 예정([docs/mobile/HANDOFF.md](docs/mobile/HANDOFF.md))
+- Android 앱 빌드·실행, 실제 Google 로그인, App Check(debug·Play Integrity), 재시작 후 복원, 계정 전환 — Android 앱 등록·App Check·Maps 설정 완료 후 실제 기기 확인 대기([연결 상태](docs/mobile/CONNECTION-STATUS.md))
 - 실외 GPS·잠금 화면 기록, 카메라, 알림
 
 ### 확정되지 않은 것
