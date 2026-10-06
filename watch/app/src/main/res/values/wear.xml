@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Data Layer capability: 폰 브리지가 워치 앱 설치 여부를 확인할 때 쓴다(폰은 uirun_phone_bridge). -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@array/android_wear_capabilities">
+    <string-array name="android_wear_capabilities" translatable="false">
+        <item>uirun_watch_app</item>
+    </string-array>
+    <color name="brand_blue">#384BF0</color>
+</resources>

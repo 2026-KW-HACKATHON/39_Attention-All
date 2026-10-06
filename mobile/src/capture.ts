@@ -104,8 +104,16 @@ function keep(job: PhotoJob, uri: string): Result<PhotoJob> {
   return { ok: true, value: job };
 }
 
+// 기본 촬영: 시스템 카메라 앱(기존 제보 화면). 워치 촬영 연결은 앱 안 카메라(app/wear-capture.tsx)의 셔터를 넘긴다.
+// 사진 URI를 돌려주고, 취소면 null.
+export type Shoot = () => Promise<string | null>;
+const systemCamera: Shoot = async () => {
+  const shot = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.6, exif: false });
+  return shot.canceled || !shot.assets[0] ? null : shot.assets[0].uri;
+};
+
 // 1) 티켓 발급 → 2) 카메라 → 3) 사진 보관 → 4) 봉인
-export async function capture(purpose: Purpose, targetId?: string, categoryCode?: string, sessionId?: string): Promise<Result<PhotoJob>> {
+export async function capture(purpose: Purpose, targetId?: string, categoryCode?: string, sessionId?: string, shoot: Shoot = systemCamera): Promise<Result<PhotoJob>> {
   const cam = await ImagePicker.requestCameraPermissionsAsync();
   if (!cam.granted) return fail('CAMERA_PERMISSION_DENIED');
   const uid = getUid();
@@ -121,12 +129,12 @@ export async function capture(purpose: Purpose, targetId?: string, categoryCode?
   if (!t.ok) return t;
   Object.assign(job, { ticketId: t.value.ticketId, uploadPath: t.value.uploadPath, expiresAt: t.value.expiresAt });
   save(job); // 카메라가 열린 동안 앱이 정리돼도 이 티켓으로 이어간다(resumeShot)
-  const shot = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.6, exif: false });
-  if (shot.canceled || !shot.assets[0]) {
+  const uri = await shoot();
+  if (!uri) {
     finishJob(job);
     return fail('CAPTURE_CANCELLED');
   }
-  const k = keep(job, shot.assets[0].uri);
+  const k = keep(job, uri);
   if (!k.ok) {
     finishJob(job);
     return k;

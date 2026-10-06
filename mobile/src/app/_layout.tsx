@@ -8,6 +8,8 @@ import { SessionProvider, useApi, useSession } from '../session';
 import '../run';
 import * as Notifications from 'expo-notifications';
 import { handleResponse } from '../notify';
+// 워치 연결(명령 수신·스냅샷·체크포인트 알림 경로). 네이티브 모듈이 없는 빌드에서는 아무것도 하지 않는다.
+import { wearForeground } from '../wear';
 import { CONFIG, EMULATOR_HOST, TARGET } from '../firebase';
 import { consentNeeded, type Settings } from '../core';
 import { color, SIMPLE_SCALE } from '../theme';
@@ -38,6 +40,7 @@ function Gate() {
       </Stack>
       <StoreBanner />
       <NotificationRouter />
+      <WearRouter />
     </Scale.Provider>
   );
 }
@@ -68,6 +71,15 @@ function NotificationRouter() {
     handleResponse(res, path => router.push(path as never));
     Notifications.clearLastNotificationResponse();
   }, [res, router, auth.status]);
+  return null;
+}
+
+// 계정 확인 뒤(앱을 직접 열었거나 워치 요청 알림으로 연 경우): 보관된 워치 요청 처리, 시작 확인, 아직 유효한 촬영 연결 이어가기
+function WearRouter() {
+  const { auth } = useSession();
+  useEffect(() => {
+    if (auth.status === 'in' || auth.status === 'out') wearForeground();
+  }, [auth.status, auth.uid]);
   return null;
 }
 

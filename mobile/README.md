@@ -122,6 +122,7 @@ npx expo-doctor
 
 네이티브 설정이 바뀔 때만 다시 빌드한다: 라이브러리 추가, `app.config.ts` 수정, `google-services.json` 추가, `GOOGLE_MAPS_API_KEY` 지정. JS만 바꿨으면 Metro로 충분하다.
 
+- **2026-10-07 워치 연결로 재빌드가 필요하다**: 로컬 네이티브 모듈 `modules/uirun-wear-bridge`(Wear Data Layer)와 `expo-camera`(워치 요청 앱 안 촬영). 재빌드 전 개발 빌드에서는 워치 연결만 꺼진다. 상세: [docs/wear/HANDOFF.md](../docs/wear/HANDOFF.md).
 - **2026-10-06 변경으로 재빌드가 필요하다**: `expo-notifications`·`expo-media-library`·`expo-sharing`·`react-native-view-shot` 추가와 플러그인 설정. 이 저장소에서는 `npx expo prebuild --platform android`(`--clean` 없이) → `npx expo run:android`로 빌드했다. `npm run prebuild`는 `--clean`이 들어 있어 쓰지 않았다.
 - `--clean` 없이도 Expo가 `android` 폴더를 다시 만들 수 있다(이번에 실제로 그랬다). `android`는 생성물이라 손으로 고친 내용이 없어야 하고, 디버그 서명 지문은 그대로였다(HANDOFF.md 값과 같음). 다시 만들어지면 `android/local.properties`가 없어지므로 아래처럼 `ANDROID_HOME`을 지정한다.
 - JDK는 17을 쓴다. JDK 26(현재 기본 `JAVA_HOME`)·Android Studio JBR 25로는 Gradle 단계(`jlink`, CMake 경고)에서 실패했다.

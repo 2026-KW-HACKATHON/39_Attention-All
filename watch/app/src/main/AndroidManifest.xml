@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+    <!-- 체크포인트 알림(화면이 꺼져 있을 때). GPS·위치·상시 wake lock은 쓰지 않는다(위치는 폰이 담당). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault">
+
+        <!-- 폰이 필요한 동반 앱이다(워치 단독 실행 아님). -->
+        <meta-data android:name="com.google.android.wearable.standalone" android:value="false" />
+        <!-- 폰 우이런 알림(운동 기록 중·관찰 요청)을 워치로 그대로 복제하지 않는다. 체크포인트는 이 앱이 한 번만 알린다. -->
+        <meta-data android:name="com.google.android.wearable.notificationBridgeMode" android:value="NO_BRIDGING" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 앱 화면이 없을 때 폰 스냅샷 변경을 받아 새 체크포인트만 알린다. -->
+        <service
+            android:name=".PhoneDataService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:host="*"
+                    android:path="/uirun/v1/snapshot"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

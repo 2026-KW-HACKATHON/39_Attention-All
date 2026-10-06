@@ -10,6 +10,7 @@
     "@react-native-firebase/storage": "^26.4.0",
     "@react-native-google-signin/google-signin": "^16.1.5",
     "expo": "~57.0.26",
+    "expo-camera": "~57.0.6",
     "expo-constants": "~57.0.20",
     "expo-crypto": "~57.0.3",
     "expo-dev-client": "~57.0.19",
@@ -47,7 +48,7 @@
     "prebuild": "expo prebuild --platform android --clean",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/core.test.ts src/runlogic.test.ts src/flows.test.ts src/run-lifecycle.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/core.test.ts src/runlogic.test.ts src/flows.test.ts src/run-lifecycle.test.ts src/wearlogic.test.ts",
     "doctor": "expo-doctor"
   },
   "private": true

@@ -187,8 +187,14 @@ async function stopUpdatesNow() {
   if (await Location.hasStartedLocationUpdatesAsync(RUN_TASK).catch(() => false)) await Location.stopLocationUpdatesAsync(RUN_TASK).catch(() => {});
 }
 
+// 워치 연결(wear.ts)이 채운다. 워치가 체크포인트를 사용자에게 알렸다고 답하면 폰 진동·알림을 생략한다(중복 방지). 기본은 폰이 알린다.
+export const wearHooks = { claimAlert: (_exposureId: string): Promise<boolean> => Promise.resolve(false) };
+
 // 시작: 정확한 위치 확인 → 서버 세션 생성. 서버 세션이 없으면 시작으로 표시하지 않는다(오프라인 시작 불가).
-export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null): Promise<Result<Run>> {
+// 폰 화면과 워치 명령이 동시에 눌러도 시작 처리는 하나만 진행하고 같은 운동을 돌려준다(먼저 누른 쪽의 종류로 시작).
+let starting: Promise<Result<Run>> | null = null;
+export const startRun = (mode: 'RUN' | 'WALK', courseId: string | null) => (starting ??= startRunNow(mode, courseId).finally(() => (starting = null)));
+async function startRunNow(mode: 'RUN' | 'WALK', courseId: string | null): Promise<Result<Run>> {
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
   const existing = getRun();
@@ -523,7 +529,7 @@ async function checkExposure() {
     if (v.ok && v.exposure && cur?.sessionId === r.sessionId && cur.status === 'ACTIVE') {
       cur.exposure = v.exposure;
       put(cur);
-      Vibration.vibrate(r.mode === 'RUN' ? 150 : [0, 150, 120, 150]);
+      if (!(await wearHooks.claimAlert(v.exposure.id))) Vibration.vibrate(r.mode === 'RUN' ? 150 : [0, 150, 120, 150]);
     }
   } catch {
     // 위치 범위 밖 등은 알림 없음으로 둔다
