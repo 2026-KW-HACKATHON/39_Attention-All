@@ -202,3 +202,5 @@ node scripts/seed-test-news.cjs unpublish  # 이 3건만 게시 내림(삭제하
 ### Mac 네이티브 빌드 경로 (2026-10-06)
 
 한글 경로의 Reanimated/Worklets 네이티브 참조 오류를 피하려면 실제 영문 경로에 체크아웃한다. 이 Mac에서는 같은 커밋의 `/Users/taemin/Developer/uirun-android-build/mobile`에서 ARM64 debug APK 빌드가 성공했다. Firebase 로컬 설정 파일도 이 체크아웃에 구성되어 있다. `npm run android`로 실행하며 Metro가 필요하다. 실제 기기 연결 점검 범위는 [연결 상태](../docs/mobile/CONNECTION-STATUS.md)를 참고한다.
+
+팀원에게 실기기 테스트를 넘길 때는 [Android 테스트 안내](../docs/mobile/ANDROID-TEAM-TEST.md)를 따른다.
