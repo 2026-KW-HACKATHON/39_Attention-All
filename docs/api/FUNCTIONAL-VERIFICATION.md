@@ -46,3 +46,9 @@ Android Emulator 화면 시험은 [docs/mobile/STATUS.md](../mobile/STATUS.md). 
 같은 날 첫 실행(Git Bash)은 Firestore Emulator가 콘솔 종료 신호로 끝나 중단됐고, 남은 Emulator 프로세스에 두 번째 실행이 붙어 규칙 테스트 2개가 이전 데이터 때문에 실패했다. 남은 프로세스를 종료한 뒤 PowerShell에서 다시 실행한 결과가 위 표다. 정리 방법은 [docs/mobile/REVIEW.md](../mobile/REVIEW.md) C항.
 
 참고로 GitHub Actions의 `Backend verification`(Ubuntu, Java 21)도 같은 커밋 94bf121에서 성공으로 표시되어 있다(2026-10-05 확인, 이 문서 작성자가 실행한 것은 아니다).
+
+## 2026-10-06 PR #1 수정 후 검증
+
+백엔드 144개·모바일 25개 테스트, 백엔드 문법·웹 검사, 모바일 타입 검사·린트, Expo Doctor 21개가 통과했다. 기존 에뮬레이터와 분리한 포트에서 규칙 12개·API 시나리오 84개·정리 작업도 모두 통과했다. 코드 커밋 `b491254`의 백엔드·모바일 GitHub Actions가 성공했다.
+
+실제 Firebase Android App Check debug 토큰 교환과 공개 API 3개의 HTTP 200, 로그인 없는 getMy의 HTTP 401을 확인했다. 수정된 pauseRun·resumeRun·finishRun·discardRun·getRecords·getRunDetail 6개 운영 함수는 배포 완료 후 ACTIVE 상태를 확인했다. Android ARM64 debug APK는 영문 경로에서 빌드하고 등록된 서명과 대조했다. 실제 계정 로그인·사진 업로드·지도 표시·실기기 운동 저장은 아직 미검증이다. 상세 범위는 [연결 상태](../mobile/CONNECTION-STATUS.md)에 기록한다.
