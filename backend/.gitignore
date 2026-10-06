@@ -5,3 +5,4 @@ node_modules/
 .firebase/
 seed.local.json
 service-account*.json
+.emulator-data/
