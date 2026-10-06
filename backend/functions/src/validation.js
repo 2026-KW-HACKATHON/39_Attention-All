@@ -14,6 +14,7 @@ class DomainError extends Error {
 const fail = (code, details) => {
   throw new DomainError(code, details);
 };
+const CLOCK_SKEW_MS = 2000;
 function text(v, max = 200) {
   if (typeof v !== "string" || !v.trim() || v.length > max)
     fail("INVALID_ARGUMENT");
@@ -35,7 +36,7 @@ function location(v, now) {
     lat: number(v.lat, -90, 90),
     lng: number(v.lng, -180, 180),
     accuracyM: number(v.accuracyM, 0, 10000),
-    measuredAt: number(v.measuredAt, 0, now + 2000),
+    measuredAt: number(v.measuredAt, 0, now + CLOCK_SKEW_MS),
     precise: true,
   };
   if (l.accuracyM > 30) fail("GPS_ACCURACY_TOO_LOW");
@@ -132,6 +133,7 @@ function pinValid(pin, m) {
   );
 }
 module.exports = {
+  CLOCK_SKEW_MS,
   DomainError,
   fail,
   text,

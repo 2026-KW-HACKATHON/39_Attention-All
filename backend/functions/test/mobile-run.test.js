@@ -11,6 +11,45 @@ function db() {
 }
 const call = (d, name, data, t) => execute(d, { uid: "u" }, name, { clientRequestId: crypto.randomUUID(), ...data }, t);
 
+test("기기 시계가 1초 빨라도 저장된 위치 뒤의 일시정지·재개·종료를 기록한다", () => {
+  const d = db();
+  call(d, "recordConsent", { version: "v2-2026-10", accepted: true }, t0);
+  const { sessionId } = call(d, "startRun", { mode: "WALK", loc: loc(t0) }, t0);
+  call(d, "appendTrack", { sessionId, points: [{ lat: 37.6195, lng: 127.05, accuracyM: 5, recordedAt: t0 + 61000 }] }, t0 + 60000);
+  call(d, "pauseRun", { sessionId, occurredAt: t0 + 61500 }, t0 + 60500);
+  assert.equal(d.sessions[sessionId].status, "PAUSED");
+  assert.equal(d.sessions[sessionId].activeMs, 61500);
+  call(d, "resumeRun", { sessionId, occurredAt: t0 + 71000 }, t0 + 70000);
+  assert.equal(d.sessions[sessionId].status, "ACTIVE");
+  const result = call(d, "finishRun", { sessionId, expectedTrackCount: 1, occurredAt: t0 + 81000 }, t0 + 80000);
+  assert.equal(result.activeMs, 71500);
+  assert.equal(d.sessions[sessionId].endedAt, t0 + 81000);
+});
+
+test("기기 시계의 2초 허용 범위를 넘거나 마지막 위치보다 이른 조작은 거절한다", () => {
+  const d = db();
+  call(d, "recordConsent", { version: "v2-2026-10", accepted: true }, t0);
+  const { sessionId } = call(d, "startRun", { mode: "RUN", loc: loc(t0) }, t0);
+  call(d, "appendTrack", { sessionId, points: [{ lat: 37.6195, lng: 127.05, accuracyM: 5, recordedAt: t0 + 61000 }] }, t0 + 60000);
+  assert.throws(() => call(d, "pauseRun", { sessionId, occurredAt: t0 + 61000 }, t0 + 60000), /INVALID_ARGUMENT/);
+  assert.throws(() => call(d, "pauseRun", { sessionId, occurredAt: t0 + 62001 }, t0 + 60000), /INVALID_ARGUMENT/);
+  call(d, "pauseRun", { sessionId, occurredAt: t0 + 62000 }, t0 + 60000);
+  assert.throws(() => call(d, "resumeRun", { sessionId, occurredAt: t0 + 72001 }, t0 + 70000), /INVALID_ARGUMENT/);
+  call(d, "resumeRun", { sessionId, occurredAt: t0 + 72000 }, t0 + 70000);
+  assert.throws(() => call(d, "finishRun", { sessionId, occurredAt: t0 + 82001 }, t0 + 80000), /INVALID_ARGUMENT/);
+});
+
+test("시계 오차가 있는 재개 직후 시각을 생략해 종료해도 활동 시간은 음수가 되지 않는다", () => {
+  const d = db();
+  call(d, "recordConsent", { version: "v2-2026-10", accepted: true }, t0);
+  const { sessionId } = call(d, "startRun", { mode: "WALK", loc: loc(t0) }, t0);
+  call(d, "pauseRun", { sessionId, occurredAt: t0 + 61000 }, t0 + 60000);
+  call(d, "resumeRun", { sessionId, occurredAt: t0 + 72000 }, t0 + 70000);
+  const result = call(d, "finishRun", { sessionId }, t0 + 70001);
+  assert.equal(result.activeMs, 61000);
+  assert.equal(d.sessions[sessionId].endedAt, t0 + 72000);
+});
+
 test("늦게 도착한 일시정지·재개는 실제 시각으로 기록되어 활동 시간이 부풀지 않는다", () => {
   const d = db();
   call(d, "recordConsent", { version: "v2-2026-10", accepted: true }, t0);

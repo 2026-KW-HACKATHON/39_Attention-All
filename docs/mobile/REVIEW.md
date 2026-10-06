@@ -6,7 +6,7 @@
 
 | 변경 | 파일 | 호환 | 테스트 |
 |---|---|---|---|
-| finishRun·discardRun 선택 입력 `occurredAt`: ACTIVE면 마지막 재개·마지막 위치점 이후, PAUSED면 일시정지 시작 이후 ~ 서버 현재 시각. 그 시각으로 activeMs·endedAt 계산(PAUSED 종료는 일시정지 구간을 그 시각에 닫음). COMPLETED/RECOVERED 판정은 서버 수신 시각 그대로 | `functions/src/service.js` | 생략하면 기존 동작 | `test/mobile-run.test.js`(1분 운동·10분 뒤 도착, 일시정지 중 늦은 종료, 같은 ID 재시도·다른 내용 REQUEST_CONFLICT, 범위 밖 거절) |
+| finishRun·discardRun 선택 입력 `occurredAt`: ACTIVE면 마지막 재개·마지막 위치점 이후, PAUSED면 일시정지 시작 이후 ~ 서버 현재 시각 + 2초(GPS와 같은 시계 오차). 그 시각으로 activeMs·endedAt 계산(PAUSED 종료는 일시정지 구간을 그 시각에 닫음). COMPLETED/RECOVERED 판정은 서버 수신 시각 그대로 | `functions/src/service.js` | 생략하면 기존 동작 | `test/mobile-run.test.js`(1분 운동·10분 뒤 도착, 일시정지 중 늦은 종료, 같은 ID 재시도·다른 내용 REQUEST_CONFLICT, 범위 밖 거절) |
 | `getRecords.participations`·`getRunDetail.participations` 행에 `categoryCode`(관찰의 공개 종류) 추가 | `service.js` | 필드 추가만 | `mobile-run.test.js` |
 | Emulator 사진 URL 호스트를 요청 Host 헤더(형식 검사)로: A-1 해결 | `local-photo.js`, `index.js`, `photo-callables.js` | `demo-uirun` Emulator 분기에서만. 운영 signed URL 무관 | `mobile-run.test.js` |
 | `scripts/seed-test-news.cjs` 추가: 로컬 Emulator에만 [테스트] 소식 3건(고정 ID) upsertNews·setNewsPublished | `backend/scripts` | 원격·비 demo 프로젝트면 실행 거절 | `mobile-run.test.js`(게시분만 getRiverFeed, 재실행 시 중복 없음) |
@@ -30,7 +30,7 @@ FRONTEND.md §4(occurredAt)·§2(categoryCode)에 반영했다. 실행 결과는
 ### A-3. 오프라인 뒤 늦게 도착한 일시정지·재개·종료 — 호환 확장(종료·폐기는 2026-10-06 추가)
 
 - 문제: `pauseRun`·`resumeRun`이 서버 수신 시각만 썼다. 오프라인에서 누른 일시정지를 10분 뒤 보내면 그 10분이 활동 시간에 더해졌다.
-- 변경: 선택 입력 `occurredAt`(epoch ms). pause는 마지막 재개·마지막 저장 위치점 이후, resume은 일시정지 시작 이후, 둘 다 서버 현재 시각 이하만 허용. 생략하면 기존 동작이라 기존 웹·클라이언트와 호환된다. 테스트 `functions/test/mobile-run.test.js`, 명세 FRONTEND.md §4.
+- 변경: 선택 입력 `occurredAt`(epoch ms). pause는 마지막 재개·마지막 저장 위치점 이후, resume은 일시정지 시작 이후, 둘 다 서버 현재 시각 + 2초까지 허용(GPS와 같은 시계 오차). 생략하면 기존 동작이라 기존 웹·클라이언트와 호환된다. 테스트 `functions/test/mobile-run.test.js`, 명세 FRONTEND.md §4.
 - 남는 점: 기기 시계를 믿는 값이라 활동 시간 표시에만 쓰이고 보상 판단에는 쓰이지 않는다. 시계가 크게 틀린 기기는 INVALID_ARGUMENT로 일시정지가 거절될 수 있다(앱은 서버 상태와 다르다고 표시).
 
 ### A-4. Storage 보안 규칙과 단순 업로드
