@@ -29,12 +29,15 @@
 
 - 백엔드 단위 테스트: 144 통과.
 - 모바일 단위 테스트: 25 통과. 실제 `run.ts`를 실행한 GPS 중지·재개 경합 테스트 포함.
-- 모바일 타입 검사·린트: 통과.
+- 모바일 타입 검사·린트: 통과. Expo Doctor 21/21 통과.
 - 격리 포트의 Firebase Emulator 통합 테스트: 규칙 12개·API 시나리오 84개·정리 작업 모두 통과. 기존 에뮬레이터는 유지했다.
 - 실제 Firebase 설정으로 Android prebuild 및 Metro/Hermes 번들 생성: 성공.
+- 같은 커밋 `b491254`의 Android ARM64 debug APK 빌드: 성공. APK 패키지·SHA-1·SHA-256이 등록 값과 일치한다. 결과는 Git 제외 `output/uirun-debug-arm64.apk`에 있다.
+- 이 Mac의 한글 경로에서는 Reanimated/Worklets 네이티브 참조 파일을 찾지 못했다. 동일 소스·SDK·빌드 옵션을 실제 영문 경로 `/Users/taemin/Developer/uirun-android-build`에 복제하자 빌드가 성공했다. 네이티브 빌드는 이 경로를 사용한다.
 - 실제 Android App Check debug 토큰 교환: 성공.
 - 실제 서버 `getHome`, `getMapData`, `getPilotData`: App Check 토큰을 첨부한 조회 성공(HTTP 200).
 - 실제 서버 `getMy`: 로그인 토큰이 없을 때 HTTP 401 `UNAUTHENTICATED` 확인.
+- 운영 함수 `pauseRun`, `resumeRun`, `finishRun`, `discardRun`, `getRecords`, `getRunDetail`: 수정 버전 배포 성공 및 ACTIVE 상태 확인.
 
 위 서버 조회는 REST 연결 점검이며 네이티브 앱 실행을 대신하지 않는다. 실제 Google 계정 로그인, 네이티브 Storage 업로드, 지도 표시, 실기기 운동 기록과 릴리스 Play Integrity는 아직 미검증이다. 연결된 Android 기기가 없어 계정 선택·권한 허용 단계는 사용자 확인이 필요하다.
 
@@ -42,7 +45,7 @@
 
 1. USB 디버깅이 켜진 Android 기기를 연결하고 `adb devices`에서 승인된 기기를 확인한다.
 2. `mobile`에서 `.env.local` 대상이 `firebase`인지 확인한다. 설정 파일 변경 후에는 `npm run prebuild`를 실행한다.
-3. `npm run android`로 설치·실행한다(Expo 개발 빌드이므로 Metro 서버가 필요하다).
+3. 이 Mac에서는 `/Users/taemin/Developer/uirun-android-build/mobile`에서 `npm run android`로 설치·실행한다(Expo 개발 빌드이므로 Metro 서버가 필요하다).
 4. 마이 → 개발용 연결 점검에서 App Check → 공개 API → Google 로그인 → 로그인 API 순으로 검사한다.
 5. 우이천 파일럿 구간에서 위치 권한·정확한 위치를 허용하고 사진 제보·짧은 운동 저장·빠른 일시정지/재개를 확인한다.
-6. 운영 서버에 최신 함수가 배포됐는지 확인한 뒤 오프라인 운동 종료도 확인한다. 로컬 테스트 통과와 운영 배포 완료는 별개다.
+6. 오프라인 운동 종료도 확인한다. 위 6개 운영 함수는 수정 버전이 배포된 상태다.

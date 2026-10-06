@@ -198,3 +198,7 @@ node scripts/seed-test-news.cjs unpublish  # 이 3건만 게시 내림(삭제하
 - 이름은 로그인 때 Google 이름으로 채우거나 덮어쓰지 않는다. 프로필 수정 화면에서만 바뀐다.
 - 알림 선호 저장은 OS 알림 권한 요청이 아니다. OS 알림 권한은 운동을 시작할 때 묻고, 거절해도 운동·앱 안 안내는 그대로다.
 - 페이지 목록은 변경 성공 뒤 `refresh(이름)`로 첫 페이지부터 다시 받고, 계정이 바뀌면 바로 비운다. 당겨서 새로 고침은 조회만 다시 한다.
+
+### Mac 네이티브 빌드 경로 (2026-10-06)
+
+한글 경로의 Reanimated/Worklets 네이티브 참조 오류를 피하려면 실제 영문 경로에 체크아웃한다. 이 Mac에서는 같은 커밋의 `/Users/taemin/Developer/uirun-android-build/mobile`에서 ARM64 debug APK 빌드가 성공했다. Firebase 로컬 설정 파일도 이 체크아웃에 구성되어 있다. `npm run android`로 실행하며 Metro가 필요하다. 실제 기기 연결 점검 범위는 [연결 상태](../docs/mobile/CONNECTION-STATUS.md)를 참고한다.
