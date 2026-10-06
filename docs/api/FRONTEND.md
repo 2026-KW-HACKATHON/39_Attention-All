@@ -5,7 +5,7 @@
 
 ## 모바일 프론트 연결 시작
 
-현재 Firebase에는 웹 앱만 등록되어 있다(2026-10-05 확인). 실제 React Native 앱은 아직 빌드·검증하지 않았다. 아래는 기존 `@react-native-firebase` 호출 예시를 사용하는 경우의 연결 절차이며, 프론트 프로젝트에서 설치 버전을 확정한다.
+현재 Firebase에는 웹 앱만 등록되어 있다(2026-10-05 확인). 실제 React Native 앱은 아직 빌드·검증하지 않았다. 1차 RN 프로젝트는 `mobile/`(Expo SDK 57 Development Build)이며, 아래 4번의 파일은 복사하지 않고 Metro `watchFolders`로 `backend/client`를 그대로 읽는다. Android 앱 등록에 필요한 값은 [docs/mobile/HANDOFF.md](../mobile/HANDOFF.md)에 있다. 아래는 기존 `@react-native-firebase` 호출 예시를 사용하는 경우의 연결 절차이며, 프론트 프로젝트에서 설치 버전을 확정한다.
 
 1. 프론트가 Android `applicationId`와 iOS `bundleIdentifier`를 확정해 백엔드 담당자에게 전달한다. 백엔드는 기존 프로젝트에 각각 앱을 등록하고 `google-services.json` / `GoogleService-Info.plist`를 제공한다. 웹 firebase-config.json으로 네이티브 앱 등록을 대신하지 않는다.
 2. Expo를 사용하면 Development Build가 필요하다. 앱 프로젝트에 `@react-native-firebase/app`, `auth`, `functions`, `storage`, `app-check`를 설치하고 각 플랫폼 설정을 적용한다. Google 로그인 라이브러리와 앱 서명 SHA, iOS URL scheme도 함께 설정한다.
@@ -146,11 +146,15 @@ type MutationFailure = {ok:false;errorCode:string;details?:object;retryable?:boo
 |---|---|---|
 | startRun | `{mode:'RUN'|'WALK',courseId?,loc}` | `{ok:true,sessionId,startedAt}`; ACTIVE |
 | appendTrack | `{sessionId,points:[{lat,lng,accuracyM,recordedAt,altitudeM?,mock?}]}` | `{ok:true,count,distanceM}`; count=저장 총점 수 |
-| pauseRun | `{sessionId}` | `{ok:true}`; ACTIVE→PAUSED |
-| resumeRun | `{sessionId}` | `{ok:true}`; PAUSED→ACTIVE |
-| finishRun | `{sessionId,expectedTrackCount?}` | `{ok:true,sessionId,status,distanceM,activeMs}`; COMPLETED 또는 RECOVERED |
-| discardRun | `{sessionId}` | `{ok:true,sessionId,status:'DISCARDED',distanceM,activeMs}` |
+| pauseRun | `{sessionId,occurredAt?}` | `{ok:true}`; ACTIVE→PAUSED |
+| resumeRun | `{sessionId,occurredAt?}` | `{ok:true}`; PAUSED→ACTIVE |
+| finishRun | `{sessionId,expectedTrackCount?,occurredAt?}` | `{ok:true,sessionId,status,distanceM,activeMs}`; COMPLETED 또는 RECOVERED |
+| discardRun | `{sessionId,occurredAt?}` | `{ok:true,sessionId,status:'DISCARDED',distanceM,activeMs}` |
 | recordMissionExposure | `{sessionId,loc}` | `{ok:true,exposure:null|Exposure}` |
+
+참여 행(`getRecords.participations`, `getRunDetail.participations`)에는 2026-10-06부터 `categoryCode`(관찰의 공개 종류, 없으면 null)가 붙는다. 목록 제목용이며 다른 필드는 그대로다.
+
+`occurredAt`(선택, 2026-10-06 추가): 오프라인 큐가 늦게 보낸 일시정지·재개의 실제 조작 시각(epoch ms). pause는 마지막 재개 시각·마지막 저장 위치점 이후, resume은 일시정지 시작 이후이고 둘 다 서버 현재 시각 + 2초까지 허용(GPS와 같은 기기 시계 오차)(벗어나면 INVALID_ARGUMENT). finishRun·discardRun(2026-10-06 추가)은 ACTIVE면 마지막 재개·마지막 저장 위치점 이후, PAUSED면 일시정지 시작 이후 ~ 서버 현재 시각 + 2초를 받고 그 시각을 `endedAt`으로 저장한다(따라서 그 뒤에 찍은 관찰은 세션에 연결되지 않는다). COMPLETED/RECOVERED 판정은 서버 수신 시각 기준 그대로다. 생략하면 서버 수신 시각을 쓰되, 이미 허용된 위치·재개·일시정지 시각보다 뒤로 돌아가지 않도록 하한을 적용한다. 기기 시계를 그대로 믿는 값이므로 활동 시간 표시에만 영향을 주며 보상 판단에는 쓰지 않는다.
 
 courseId 지정 시 등록된 코스이고 modes에 운동 종류가 포함되어야 한다. walk-only 코스를 RUN으로 시작하면 COURSE_MODE_NOT_SUPPORTED. courseId 생략 가능; 화면은 null 코스명 대체 표시 필요.
 

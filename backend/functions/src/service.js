@@ -273,6 +273,8 @@ function readModel(d, auth, name, data = {}, now = Date.now()) {
             const reward = P.obsReward(d, o.id);
             return {
               ...o,
+              // 관찰 종류(공개 정보): 참여 기록에 없으면 관찰의 종류를 붙인다(목록 제목용)
+              categoryCode: o.categoryCode ?? d.issues[o.issueId]?.categoryCode ?? null,
               reward,
               points: reward.status === "CONFIRMED" ? reward.amount : 0,
               pointsPending: reward.status === "PENDING" ? reward.amount : 0,
@@ -289,7 +291,7 @@ function readModel(d, auth, name, data = {}, now = Date.now()) {
       ),
     };
   if (name === "getRunDetail")
-    { const stored=own(d.sessions,data.sessionId,uid),session={...stored,activeMs:stored.activeMs+(stored.status==='ACTIVE'?Math.max(0,now-stored.lastResumeAt):0)}; return {...clean(session),exposures:(session.exposureIds||[]).map(id=>d.exposures[id]).filter(e=>e?.uid===uid).map(clean),metrics:W.runMetrics(session),participationStats:Participation.stats(Participation.rows(d,uid,session.id)),participations:page(Participation.rows(d,uid,session.id),data,"observedAt")}; }
+    { const stored=own(d.sessions,data.sessionId,uid),session={...stored,activeMs:stored.activeMs+(stored.status==='ACTIVE'?Math.max(0,now-stored.lastResumeAt):0)}; return {...clean(session),exposures:(session.exposureIds||[]).map(id=>d.exposures[id]).filter(e=>e?.uid===uid).map(clean),metrics:W.runMetrics(session),participationStats:Participation.stats(Participation.rows(d,uid,session.id)),participations:page(Participation.rows(d,uid,session.id).map(o=>({...o,categoryCode:o.categoryCode??d.issues[o.issueId]?.categoryCode??null})),data,"observedAt")}; }
   if (name === "getMy")
     return {
       ...userDTO(d, uid),
@@ -453,7 +455,7 @@ function perform(d, auth, name, x, t) {
         V.fail("SESSION_TRACK_LIMIT");
       let last = s.track.at(-1)?.recordedAt || s.startedAt - 1;
       for (const p of x.points) {
-        const recordedAt = V.number(p.recordedAt, s.startedAt, t + 2000);
+        const recordedAt = V.number(p.recordedAt, s.startedAt, t + V.CLOCK_SKEW_MS);
         if (recordedAt <= last) V.fail("OUT_OF_ORDER");
         if (
           s.pauses.some((a) => recordedAt >= a.from && recordedAt < (a.to || t))
@@ -478,10 +480,14 @@ function perform(d, auth, name, x, t) {
       s.distanceM = trackDistance(s.track);
       return success({ count: s.track.length, distanceM: s.distanceM });
     }
+    // occurredAt(선택): 실제 조작 시각. GPS와 동일하게 기기 시계가 최대 2초 빠른 경우까지 허용.
+    // 생략하면 서버 수신 시각(기존 동작). 늦게 도착한 요청이 활동 시간을 부풀리지 않게 한다.
     if (name === "pauseRun") {
       if (s.status !== "ACTIVE") V.fail("INVALID_STATE");
-      s.activeMs += t - s.lastResumeAt;
-      s.pauses.push({ from: t, to: null });
+      const minAt = Math.max(s.lastResumeAt, (s.track.at(-1)?.recordedAt ?? 0) + 1);
+      const at = x.occurredAt === undefined ? Math.max(t, minAt) : V.number(x.occurredAt, minAt, t + V.CLOCK_SKEW_MS);
+      s.activeMs += at - s.lastResumeAt;
+      s.pauses.push({ from: at, to: null });
       s.status = "PAUSED";
       return success();
     }
@@ -491,8 +497,9 @@ function perform(d, auth, name, x, t) {
         P.sessionAgeRule(s.startedAt, t) !== "RESUME"
       )
         V.fail("INVALID_STATE");
-      s.pauses.at(-1).to = t;
-      s.lastResumeAt = t;
+      const at = x.occurredAt === undefined ? Math.max(t, s.pauses.at(-1).from) : V.number(x.occurredAt, s.pauses.at(-1).from, t + V.CLOCK_SKEW_MS);
+      s.pauses.at(-1).to = at;
+      s.lastResumeAt = at;
       s.status = "ACTIVE";
       return success();
     }
@@ -541,15 +548,24 @@ function perform(d, auth, name, x, t) {
       V.number(x.expectedTrackCount, 0, 5000) !== s.track.length
     )
       V.fail("TRACK_NOT_SYNCED", { storedCount: s.track.length });
-    if (s.status === "ACTIVE") s.activeMs += t - s.lastResumeAt;
-    else s.pauses.at(-1).to = t;
+    // occurredAt(선택): 종료·폐기를 실제로 누른 시각. ACTIVE면 마지막 재개·마지막 위치점 이후,
+    // PAUSED면 일시정지 시작 이후 ~ 서버 현재 시각 + 2초를 허용(GPS와 같은 시계 오차).
+    // 상태(COMPLETED/RECOVERED) 판정은 기기 시계가 아니라 서버 수신 시각으로 한다.
+    const minAt = s.status === "ACTIVE"
+      ? Math.max(s.lastResumeAt, (s.track.at(-1)?.recordedAt ?? 0) + 1)
+      : s.pauses.at(-1).from;
+    const at = x.occurredAt === undefined
+      ? Math.max(t, minAt)
+      : V.number(x.occurredAt, minAt, t + V.CLOCK_SKEW_MS);
+    if (s.status === "ACTIVE") s.activeMs += at - s.lastResumeAt;
+    else s.pauses.at(-1).to = at;
     s.status =
       name === "discardRun"
         ? "DISCARDED"
         : P.sessionAgeRule(s.startedAt, t) === "ABANDONED"
           ? "RECOVERED"
           : "COMPLETED";
-    s.endedAt = t;
+    s.endedAt = at;
     s.distanceM = trackDistance(s.track);
     return success({
       sessionId: s.id,

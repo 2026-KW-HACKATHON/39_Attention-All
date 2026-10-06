@@ -98,7 +98,7 @@ exports.getPhotoAccess = onCall(options, async (req) => {
     });
     if (emulator && process.env.GCLOUD_PROJECT === "demo-uirun") {
       const token = require("./local-photo").signLocalPhoto(uid, x.photoId);
-      return {url: `http://127.0.0.1:5001/demo-uirun/${REGION}/localPhoto?token=${encodeURIComponent(token)}`, expiresInSec:300};
+      return {url: `${require("./local-photo").localPhotoBase(req)}/demo-uirun/${REGION}/localPhoto?token=${encodeURIComponent(token)}`, expiresInSec:300};
     }
     const [url] = await getStorage()
       .bucket()
@@ -117,7 +117,7 @@ if (emulator && process.env.GCLOUD_PROJECT === "demo-uirun") exports.localPhoto 
     const [bytes]=await getStorage().bucket().file(path).download();res.set("Cache-Control","no-store").type("image/jpeg").send(bytes);
   }catch{res.status(403).send("PHOTO_ACCESS_DENIED")}
 });
-exports.getPublicPhotoAccess=onCall(options,async req=>{try{const x=data(req);return await require("./photo-callables").access(V.text(x.photoId,100));}catch(e){throw error(e)}});
+exports.getPublicPhotoAccess=onCall(options,async req=>{try{const x=data(req);return await require("./photo-callables").access(V.text(x.photoId,100),req);}catch(e){throw error(e)}});
 exports.processEvidence = onObjectFinalized(
   { region: REGION, serviceAccount: emulator ? undefined : "uirun-runtime@uirun-92539.iam.gserviceaccount.com", memory: "1GiB", timeoutSeconds: 120, maxInstances: 3 },
   async (event) => {

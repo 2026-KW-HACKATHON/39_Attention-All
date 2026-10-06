@@ -4,6 +4,8 @@
 
 2026 광운대학교 KW해커톤 **39조 일동차렷** 프로젝트입니다.
 
+> **읽기 전에:** 1~14절은 초기 기획 설명입니다. 실제로 구현된 범위와 기술 스택은 [9절](#9-기술-스택)과 [15절 현재 구현 상태](#15-현재-구현-상태)를 기준으로 봐 주세요. API 계약은 [docs/api/FRONTEND.md](docs/api/FRONTEND.md)가 기준입니다.
+
 우이런은 월계1동 생활권의 우이천을 중심으로, 주민과 광운대생이 이미 반복하고 있는 **러닝·산책·통행**을 환경 참여의 진입점으로 활용합니다.
 
 환경 제보를 먼저 요구하기보다, 우이천을 이용하는 과정에서 필요한 정보를 제공하고 필요한 순간에만 가볍게 참여하도록 설계합니다.
@@ -67,6 +69,8 @@ Eco Check Point 또는 자발적 제보
 ---
 
 ## 3. 주요 기능
+
+> 초기 기획입니다. 현재 구현과 다른 점: 사용자의 ‘해결 확인’ 단계와 그 포인트는 현재 기획에서 구현하지 않습니다. 포인트는 간단 재확인 1P·사진 5P와 일일 상한을 따릅니다(FRONTEND.md §5). 행정 전달은 확정되지 않았습니다.
 
 ### 3.1 오늘의 우이천
 
@@ -418,25 +422,28 @@ AI 결과는 보조 정보로만 사용하며, 오염·안전 여부를 단정�
 
 ## 9. 기술 스택
 
-### Core
+초기 기획의 Kotlin·Jetpack Compose, Naver Map SDK, 기상청·에어코리아 API는 현재 쓰지 않습니다. 실제 구성은 아래와 같습니다.
 
-- Android
-  - Kotlin
-  - Jetpack Compose
-- Firebase
-  - Authentication
-  - Firestore
-  - Storage
-- Naver Map SDK
-- 기상청 API
-- 에어코리아 API
+### 서버 (구현됨, `backend/`)
 
-### Extension
+- Cloud Functions for Firebase v2 (Node 22, `asia-northeast3`) — HTTPS Callable 49개 + 사진 처리 이벤트 + 정리 스케줄
+- Firestore(서버 전용 저장, 클라이언트 직접 접근 차단), Cloud Storage(촬영 티켓으로만 업로드), Authentication(Google), App Check(강제)
+- 날씨·대기질: Open-Meteo 예보·대기질 모델 값(서버가 조회해 캐시)
 
-- Wear OS
-  - Health Services
-- Multimodal LLM API
-  - 이미지 분류 및 중복 판별 보조
+### 모바일 앱 (1차 구현 중, `mobile/`)
+
+- React Native 0.86 + Expo SDK 57 Development Build, Expo Router, TypeScript
+- React Native Firebase(app·auth·functions·app-check), Google Sign-In
+- 지도 SDK는 아직 정하지 않았습니다.
+
+### 웹 (검증·예비 시연용)
+
+- `backend/web/retouch`: 서버에 연결한 HTML 미리보기(Firebase Web SDK, Leaflet + OpenStreetMap)
+- `backend/verification`: API 기능 검증 화면
+
+### 확장 (미착수)
+
+- Wear OS, 이미지 분류·중복 판별 보조 AI
 
 ---
 
@@ -504,11 +511,12 @@ AI 결과는 보조 정보로만 사용하며, 오염·안전 여부를 단정�
 
 API Key, 인증정보, 비밀키는 Git 저장소에 포함하지 않습니다.
 
-예정 관리 방식:
+현재 관리 방식:
 
-- Android 로컬 설정: `local.properties`
-- 서버 / 개발 환경변수: `.env`
-- Firebase 및 외부 API 인증정보: 환경변수 또는 플랫폼 Secret 사용
+- 모바일 개발 설정: `mobile/.env.local`(커밋 안 함). `EXPO_PUBLIC_*` 값은 앱에 들어가는 공개 값이라 비밀값을 넣지 않습니다.
+- Firebase 앱 설정 파일 `mobile/google-services.json`: 커밋하지 않습니다(`mobile/.gitignore`).
+- 서버: 서비스 계정 키·CLI 토큰을 저장소에 두지 않습니다. 웹 `firebase-config.json`은 공개 설정입니다.
+- App Check 디버그 토큰은 개인 로컬 값으로만 관리합니다.
 
 `.gitignore`에는 최소한 다음 항목을 포함합니다.
 
@@ -527,30 +535,60 @@ google-services.json
 
 ## 14. 데이터·API 및 외부 서비스 출처
 
-현재 기획 단계에서 사용 예정인 데이터·외부 서비스입니다.
-실제 구현 시 사용 여부와 라이선스·이용약관을 다시 확인하고, 최종 사용 목록으로 갱신합니다.
+2026-10-05 기준 실제 사용 여부입니다. 라이선스·이용약관은 실제 배포 전에 다시 확인합니다.
 
 | 구분 | 서비스 / 출처 | 용도 | 상태 |
 |---|---|---|---|
-| 기상 | 기상청 | 기온·강수·풍속 등 | 사용 예정 |
-| 대기질 | 에어코리아 | PM10·PM2.5 등 | 사용 예정 |
-| 지도 | NAVER Maps API | 지도 및 위치 표시 | 사용 예정 |
+| 기상·대기질 | Open-Meteo 예보·대기질 API | 기온·체감·습도·바람·강수, PM10·PM2.5(모델 추정값) | 사용 중(서버 `getWeather`가 조회·캐시) |
+| 기상 | 기상청 | 기온·강수·풍속 등 | 사용하지 않음(초기 기획) |
+| 대기질 | 에어코리아 | PM10·PM2.5 등 | 사용하지 않음(초기 기획) |
+| 지도 | OpenStreetMap 데이터 + Leaflet | 웹 미리보기의 지도·하천선·시설 | 웹에서 사용 중 |
+| 지도 | Google Maps SDK for Android | 앱 지도 | 설정 완료·실기기 미검증 |
+| 사진 | 서울연구원 서울연구데이터서비스 | 코스 분위기 사진(공공누리 제1유형, 출처 표시) | 사용 중 |
 | 공공데이터 | 서울 열린데이터광장 / 공공데이터포털 | 하천·시설 관련 데이터 탐색 | 검토 중 |
-| 인증·DB | Firebase | Auth·Firestore·Storage | 사용 예정 |
-| 웨어러블 | Wear OS Health Services | 운동 데이터 연동 | 확장 기능 |
-| AI | Multimodal LLM API | 이미지 분류·중복 판별 보조 | 확장 기능 |
+| 인증·서버 | Firebase | Auth·Functions·Firestore·Storage·App Check | 사용 중 |
+| 웨어러블 | Wear OS Health Services | 운동 데이터 연동 | 미착수 |
+| AI | Multimodal LLM API | 이미지 분류·중복 판별 보조 | 미착수 |
 
-오픈소스 라이브러리를 실제 도입할 경우 이 섹션에 **프로젝트명, 라이선스, 사용 목적**을 함께 기록합니다.
+모바일 앱 글꼴: IBM Plex Sans KR, Archivo(둘 다 SIL Open Font License 1.1). 앱 화면의 마이 › 정보 및 출처에도 적었습니다.
 
 ---
 
-## 15. 현재 개발 상태
+## 15. 현재 구현 상태
 
-현재는 **주제 확정 및 기획·요구사항 정리 단계**입니다.
+2026-10-05 기준입니다. "완료"는 아래 근거가 있는 것만 적었습니다.
 
-구현 완료된 기능은 아직 없습니다.
+### 서버 구현 완료 (`backend/`)
 
-월계1동 우이천 Pilot 구간 현장조사와 사용자 검증을 시작으로 핵심 기능을 구현할 예정입니다.
+- HTTPS Callable 49개 + 사진 처리 이벤트 + 정리 스케줄(계약: [FRONTEND.md](docs/api/FRONTEND.md))
+- Google 로그인 계정, 약관 동의 버전, 프로필·설정, 운동 시작~종료와 GPS 검증·집계, 촬영 티켓·사진 처리, 간단/사진 재확인·신규 제보·정기 관찰, 포인트 원장·일일 상한, 웰컴 혜택·쿠폰 PIN 확인, 기여 철회, 탈퇴 정리, 운영자 API, 소식, 공개 사진 사본
+- Firestore 클라이언트 직접 접근 차단, Storage는 서버 발급 티켓으로만 업로드, 운영 함수 App Check 강제
+
+### 로컬 검증 완료
+
+- 단위 테스트, 보안 규칙, Emulator 스모크, API 시나리오 84개, 탈퇴 후속 정리 — [FUNCTIONAL-VERIFICATION.md](docs/api/FUNCTIONAL-VERIFICATION.md)
+- 로컬 Emulator 결과입니다. 운영 프로젝트의 실제 Google 로그인·App Check·signed URL·Cloud Scheduler는 이 검증에 포함되지 않습니다.
+
+### 모바일 앱 구현 중 (`mobile/`, 1차)
+
+- React Native Android 앱 기반, 디자인 토큰·하단 탭, Firebase 서비스 계층, Google 로그인, App Check 초기화 구성, 개발용 연결 점검
+- 홈(코스·날씨)·마이페이지(포인트·활동 요약) 실제 조회, 이름·화면 모드·알림 선호 변경, 약관 동의, 포인트 내역
+- 지도·운동 기록·사진 제보·혜택 화면은 아직 앱에 연결하지 않았습니다. 실행 방법: [mobile/README.md](mobile/README.md)
+
+### 실기기·운영 미검증
+
+- Android 앱 빌드·실행, 실제 Google 로그인, App Check(debug·Play Integrity), 재시작 후 복원, 계정 전환 — Android 앱 등록·App Check·Maps 설정 완료 후 실제 기기 확인 대기([연결 상태](docs/mobile/CONNECTION-STATUS.md))
+- 실외 GPS·잠금 화면 기록, 카메라, 알림
+
+### 확정되지 않은 것
+
+- 월계1동 제휴점포·실제 혜택 재고(현재 예시 혜택만), 주민센터 등 행정 전달 방식, 환경 데이터 내보내기(Export)
+- 동의·개인정보 문안(현재 시안), 원시 경로·사진 보존 기간의 최종 정책
+
+### 현재 기획에서 구현하지 않는 것
+
+- 사용자의 ‘해결 확인’ 단계와 해결 상태 기록·포인트(3.4·3.6·3.7의 해당 항목)
+- AI 이미지 분류, Wear OS
 
 ---
 
@@ -570,4 +608,4 @@ google-services.json
 
 ## 개발 실행
 
-[백엔드 실행](backend/README.md) · [API 명세](docs/api/FRONTEND.md)
+[백엔드 실행](backend/README.md) · [모바일 앱 실행](mobile/README.md) · [API 명세](docs/api/FRONTEND.md) · [기능 검증 결과](docs/api/FUNCTIONAL-VERIFICATION.md) · [앱 등록 요청](docs/mobile/HANDOFF.md) · [백엔드 검토 메모](docs/mobile/REVIEW.md)
