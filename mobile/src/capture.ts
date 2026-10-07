@@ -14,6 +14,7 @@ import { getUid, mutate } from './session';
 import { evidenceFile, readJson, StoreError, writeJson } from './store';
 import { domainFailure, toFailure, type Failure, type Result } from './core';
 import { isLoc, preciseLoc, type Loc } from './location';
+import { participationLoc } from './pilot-access';
 import { checkPhoto, pickJob, sealLocOk } from './capturelogic';
 export { needsRetake } from './capturelogic';
 
@@ -108,10 +109,15 @@ function keep(job: PhotoJob, uri: string): Result<PhotoJob> {
 export async function capture(purpose: Purpose, targetId?: string, categoryCode?: string, sessionId?: string): Promise<Result<PhotoJob>> {
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
+  // 참여 범위는 카메라 권한 창·촬영보다 먼저 확인한다.
+  const beforeCamera = await participationLoc();
+  if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
+  if (!isLoc(beforeCamera)) return beforeCamera;
   const cam = await ImagePicker.requestCameraPermissionsAsync();
   if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
   if (!cam.granted) return fail('CAMERA_PERMISSION_DENIED');
-  const loc = await preciseLoc();
+  // 최초 권한 창에서 시간이 지났거나 이동했을 수 있어 티켓 발급 직전에 다시 잰다.
+  const loc = await participationLoc();
   if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
   if (!isLoc(loc)) return loc;
   const job: PhotoJob = { id: Crypto.randomUUID(), uid, key: jobKey(purpose, targetId, categoryCode), purpose, targetId, categoryCode, sessionId, stage: 'TICKETED', createdAt: Date.now() };

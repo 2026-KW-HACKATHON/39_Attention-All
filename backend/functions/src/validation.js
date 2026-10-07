@@ -87,12 +87,17 @@ function nearestOnLine(point, points) {
   }
   return best.point;
 }
+const PARTICIPATION_RADIUS_M = 100;
+function pilotDistance(db, l) {
+  if (!db.geometry.paths.length) fail("PILOT_NOT_CONFIGURED");
+  return Math.min(...db.geometry.paths.map(p => lineDistance([l.lat, l.lng], p.points)));
+}
 function match(db, l) {
   const paths = db.geometry.paths
     .map((p) => ({ ...p, d: lineDistance([l.lat, l.lng], p.points) }))
     .sort((a, b) => a.d - b.d);
   if (!paths.length) fail("PILOT_NOT_CONFIGURED");
-  if (paths[0].d > 25) fail("OUTSIDE_PILOT");
+  if (paths[0].d > PARTICIPATION_RADIUS_M + 1e-6) fail("OUTSIDE_PILOT", { participationRadiusM: PARTICIPATION_RADIUS_M, distanceToPilotM: Math.round(paths[0].d) });
   if (
     paths[1] &&
     paths[1].corridorId === paths[0].corridorId &&
@@ -134,6 +139,8 @@ function pinValid(pin, m) {
 }
 module.exports = {
   CLOCK_SKEW_MS,
+  PARTICIPATION_RADIUS_M,
+  pilotDistance,
   DomainError,
   fail,
   text,

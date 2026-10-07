@@ -73,7 +73,7 @@ type Page<T> = {items:T[]; nextCursor:string|null};
 type MutationFailure = {ok:false;errorCode:string;details?:object;retryable?:boolean};
 ```
 
-`loc`: 정확도 ≤30m, 측정 후 ≤10초, 서버보다 미래 최대2초, mock=true 거절. 파일럿 경로 ≤25m 및 같은 PATH/CORRIDOR 검사. GPS 주장 자체가 위변조 불가능한 증명은 아니다.
+`loc`: 정확도 ≤30m, 측정 후 ≤10초, 서버보다 미래 최대2초, mock=true 거절. 참여 기능은 등록된 우이천 경로에서 ≤100m 및 같은 PATH/CORRIDOR 검사. 운동 시작은 바깥에서도 제한 안내를 확인한 뒤 `allowOutsidePilot: true`로 가능하다. 이 값은 제보·재확인 제한을 해제하지 않으며, 참여 가능 여부는 요청 시 현재 위치로 판정한다. GPS 주장 자체가 위변조 불가능한 증명은 아니다.
 
 권한 표기: **공개**=로그인 없이 가능(App Check 필수), **본인**=Firebase 로그인, **운영자**=로그인+admin claim. 동의 버전 `v2-2026-10`가 필요한 변경은 아래 표시한다. 동의 기록은 서버 사용자 토큰 기준.
 
@@ -144,13 +144,15 @@ type MutationFailure = {ok:false;errorCode:string;details?:object;retryable?:boo
 
 | 함수 | 입력 | 정상 응답/상태 |
 |---|---|---|
-| startRun | `{mode:'RUN'|'WALK',courseId?,loc}` | `{ok:true,sessionId,startedAt}`; ACTIVE |
+| startRun | `{mode:'RUN'|'WALK',courseId?,loc,allowOutsidePilot?:boolean}` | `{ok:true,sessionId,startedAt}`; ACTIVE |
 | appendTrack | `{sessionId,points:[{lat,lng,accuracyM,recordedAt,altitudeM?,mock?}]}` | `{ok:true,count,distanceM}`; count=저장 총점 수 |
 | pauseRun | `{sessionId,occurredAt?}` | `{ok:true}`; ACTIVE→PAUSED |
 | resumeRun | `{sessionId,occurredAt?}` | `{ok:true}`; PAUSED→ACTIVE |
 | finishRun | `{sessionId,expectedTrackCount?,occurredAt?}` | `{ok:true,sessionId,status,distanceM,activeMs}`; COMPLETED 또는 RECOVERED |
 | discardRun | `{sessionId,occurredAt?}` | `{ok:true,sessionId,status:'DISCARDED',distanceM,activeMs}` |
 | recordMissionExposure | `{sessionId,loc}` | `{ok:true,exposure:null|Exposure}` |
+
+우이천 산책로에서 100m를 벗어난 시작 위치는 확인 안내 후 `allowOutsidePilot:true`를 보내야 한다. 이 동의는 운동 시작에만 적용되며, 참여 기능은 매 요청의 위치로 다시 검사한다. 운동 중 100m 안으로 들어오면 참여 가능하고 다시 벗어나면 제한된다.
 
 참여 행(`getRecords.participations`, `getRunDetail.participations`)에는 2026-10-06부터 `categoryCode`(관찰의 공개 종류, 없으면 null)가 붙는다. 목록 제목용이며 다른 필드는 그대로다.
 

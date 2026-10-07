@@ -9,6 +9,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { activeMs, clearEnded, discardRun, finishRun, finishSavedOnly, getRun, pauseRun, pump, restartLocation, resumeRun, subscribeRun, type Exposure, type Run } from '../run';
+import { useParticipationAccess } from '../proximity';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../pilot-proximity';
 import { pendingPoints, trailLines } from '../runlogic';
 import { quickFromExposure, nearestM } from '../exposure';
 import { useApi } from '../session';
@@ -28,6 +30,7 @@ const PROBLEM: Record<string, string> = {
 
 export default function RunScreen() {
   const router = useRouter();
+  const access = useParticipationAccess();
   const inset = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const k = useContext(Scale), simple = k !== 1;
@@ -125,11 +128,13 @@ export default function RunScreen() {
   const report = (wide: boolean) => (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push('/report' as never)}
+      disabled={access.restricted}
+      accessibilityState={{ disabled: access.restricted }}
+      onPress={() => void access.open('/report')}
       style={({ pressed }) => [
         { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center' },
         wide ? { flexDirection: 'row', gap: 6, minHeight: simple ? 64 : 56, borderRadius: 999 } : { gap: 2, width: 76, height: 64, borderRadius: 16 },
-        pressed && { opacity: 0.7 },
+        (pressed || access.restricted) && { opacity: 0.45 },
       ]}>
       <Icon name="flag" c={color.white} />
       <Txt w={800} s={wide ? (simple ? 19 : 17) : 13} c={color.white} lh={1.2}>환경 제보</Txt>
@@ -170,6 +175,7 @@ export default function RunScreen() {
             ) : null}
           </View>
         ) : null}
+        {access.restricted && !closing ? <Txt s={12} c={NOTE}>{OUTSIDE_PARTICIPATION_TEXT}</Txt> : null}
         {closing ? (
           <Txt s={14} c={SUB} style={{ marginTop: 12 }}>
             {r.offline ? '연결을 기다리고 있어요. 누른 시각으로 종료가 기록돼요.' : '기록을 저장하는 중이에요.'}
@@ -283,7 +289,7 @@ function RunMap({ r }: { r: Run }) {
 
 // 운동 중 관찰 요청 카드(웹 alertHtml). 달리기는 어두운 카드, 산책은 흰 카드. 간단 응답은 이 화면에서 바로 보낸다.
 function AlertCard({ r, ex, now }: { r: Run; ex: Exposure; now: number }) {
-  const router = useRouter();
+  const access = useParticipationAccess();
   const run = r.mode === 'RUN';
   const issue = useApi<{ issue: Issue }>('getIssueDetail', { issueId: ex.targetId }, false, ex.kind !== 'ISSUE');
   const map = useApi<MapData>('getMapData');
@@ -322,9 +328,9 @@ function AlertCard({ r, ex, now }: { r: Run; ex: Exposure; now: number }) {
       </View>
       <View style={{ flexDirection: 'row', gap: 8, paddingRight: 8 }}>
         {ex.kind === 'ISSUE' ? (
-          <Btn kind={run ? 'white' : 'ink'} label="지금도 보여요" busy={busy} disabled={far} onPress={() => void quick()} style={{ flex: 1, minHeight: run ? 44 : 52 }} />
+          <Btn kind={run ? 'white' : 'ink'} label="지금도 보여요" busy={busy} disabled={far || access.restricted} onPress={() => void quick()} style={{ flex: 1, minHeight: run ? 44 : 52 }} />
         ) : null}
-        <Btn kind={run ? 'ghost' : 'line'} icon="camera" label="사진" onPress={() => router.push(`/report?kind=${ex.kind === 'ISSUE' ? 'recheck' : 'routine'}&target=${ex.targetId}&exposure=${ex.id}` as never)} style={{ flex: 1, minHeight: run ? 44 : 52 }} />
+        <Btn kind={run ? 'ghost' : 'line'} icon="camera" label="사진" disabled={access.restricted} onPress={() => void access.open(`/report?kind=${ex.kind === 'ISSUE' ? 'recheck' : 'routine'}&target=${ex.targetId}&exposure=${ex.id}`)} style={{ flex: 1, minHeight: run ? 44 : 52 }} />
       </View>
       {msg || (ex.kind === 'ISSUE' && far) ? (
         <Txt s={13} c={run ? NOTE : color.blue} style={{ paddingRight: 8 }}>{msg ?? `${radius}m 안에서 남길 수 있어요`}</Txt>

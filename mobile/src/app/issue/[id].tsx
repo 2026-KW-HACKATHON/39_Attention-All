@@ -1,3 +1,5 @@
+import { useParticipationAccess } from '../../proximity';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../../pilot-proximity';
 // 관찰 상세: getIssueDetail(공개 정보·공개 참여 이력) + 공개 승인된 사진만. 숨김·삭제된 관찰은 NOT_FOUND로 안내한다.
 // 참여: 지금도 보여요(QUICK), 사진으로 재확인, 내 제보면 사진 보완. 가능 여부·보상은 서버가 판단한다.
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +13,7 @@ import { Btn, LoadState, Micro, Row, Rows, Screen, SecTitle, Txt } from '../../u
 const LEVEL: Record<string, string> = { NONE: '검토 전', PEER: '다른 사람 사진으로 확인', ADMIN: '운영자 확인' };
 
 export default function IssueDetail() {
+  const access = useParticipationAccess();
   const router = useRouter();
   const { id, exposure } = useLocalSearchParams<{ id: string; exposure?: string }>();
   const q = useApi<{ issue: Issue; observations: Page<{ id: string; modality: string; role: string; observedAt: number }>; own: boolean }>('getIssueDetail', { issueId: id });
@@ -23,7 +26,7 @@ export default function IssueDetail() {
       </Screen>
     );
   const cur = issueCurrent(i, pilot.data?.categories[i.categoryCode]?.staleH ?? 72);
-  const go = (kind: string) => router.push(`/report?kind=${kind}&target=${i.id}${exposure ? '&exposure=' + exposure : ''}` as never);
+  const go = (kind: string) => void access.open(`/report?kind=${kind}&target=${i.id}${exposure ? '&exposure=' + exposure : ''}`);
   return (
     <Screen title={i.categoryLabel ?? '관찰'} onClose={() => router.back()}>
       <Txt w={700} s={15} c={cur ? color.blue : color.sub}>
@@ -36,17 +39,18 @@ export default function IssueDetail() {
       <View style={{ marginTop: 8 }}>
         <ServerPhoto photoId={i.publicPhoto?.id} takenAt={i.publicPhoto?.takenAt} />
       </View>
+      {access.restricted ? <Micro>{OUTSIDE_PARTICIPATION_TEXT}</Micro> : null}
       {cur ? (
         q.data?.own ? (
           // 내가 올린 제보는 재확인할 수 없다(서버 OWN_ISSUE_RECHECK). 사진 보완만 보인다.
           <View style={{ gap: 10, marginTop: 16 }}>
-            <Btn kind="blue" icon="camera" label="내 제보에 사진 보완" onPress={() => go('add')} />
+            <Btn kind="blue" icon="camera" label="내 제보에 사진 보완" disabled={access.restricted} onPress={() => go('add')} />
             <Micro>내가 올린 제보예요. 다른 사람의 확인으로 검증돼요.</Micro>
           </View>
         ) : (
           <View style={{ gap: 10, marginTop: 16 }}>
-            <Btn kind="blue" label="지금도 보여요" onPress={() => go('quick')} />
-            <Btn label="사진으로 재확인" icon="camera" onPress={() => go('recheck')} />
+            <Btn kind="blue" label="지금도 보여요" disabled={access.restricted} onPress={() => go('quick')} />
+            <Btn label="사진으로 재확인" icon="camera" disabled={access.restricted} onPress={() => go('recheck')} />
           </View>
         )
       ) : (

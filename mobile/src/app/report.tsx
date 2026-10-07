@@ -6,7 +6,10 @@ import { Alert, Image, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi, useCloseOnAccountChange, mutate, refresh } from '../session';
 import { capture, finishJob, markSubmitting, needsRetake, pendingJob, resumeShot, STAGE_TEXT, sweepJobs, upload, type PhotoJob, type Purpose } from '../capture';
-import { isLoc, preciseLoc } from '../location';
+import { useParticipationAccess } from '../proximity';
+import { participationLoc } from '../pilot-access';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../pilot-proximity';
+import { isLoc } from '../location';
 import { getRun } from '../run';
 import { ready } from '../gate';
 import { errorText, rewardText, type Category, type Failure, type Issue, type Participation } from '../core';
@@ -22,7 +25,7 @@ const LOCATION_TEXT: Record<string, string> = {
   GPS_ACCURACY_TOO_LOW: '위치 정확도가 낮아요(30m 초과). 하늘이 보이는 곳에서 다시 시도해 주세요.',
   LOCATION_STALE: '위치를 다시 확인해야 해요. 다시 시도해 주세요.',
   REJECTED_MOCK: '가짜 위치로는 참여할 수 없어요.',
-  OUTSIDE_PILOT: '파일럿 구간(우이천 산책로) 안에서만 참여할 수 있어요.',
+  OUTSIDE_PILOT: OUTSIDE_PARTICIPATION_TEXT,
   AMBIGUOUS_LOCATION: '어느 산책로인지 정할 수 없는 위치예요. 둑 위 산책로에서 다시 시도해 주세요.',
   WRONG_SCOPE: '이 관찰과 같은 구간에서만 참여할 수 있어요.',
   LOCATION_UNAVAILABLE: '현재 위치를 받지 못했어요. 위치 설정을 켜고 다시 시도해 주세요.',
@@ -61,6 +64,7 @@ function Candidate({ id, onPick }: { id: string; onPick: () => void }) {
 export default function Report() {
   useCloseOnAccountChange();
   const router = useRouter();
+  const access = useParticipationAccess();
   // exposure: 운동 중 관찰 요청(알림·알림 카드)에서 왔으면 그 요청 ID를 참여에 함께 보낸다(서버가 세션·만료를 다시 확인)
   const p = useLocalSearchParams<{ kind?: Kind; target?: string; exposure?: string }>();
   const kind: Kind = p.kind ?? 'new';
@@ -90,12 +94,12 @@ export default function Report() {
 
   const submit = async (j: PhotoJob | null, resolution?: { action: 'CREATE_NEW' | 'ATTACH_EXISTING'; issueId?: string }) => {
     setError(null);
+    setPhase('참여 위치 확인 중');
+    const loc = await participationLoc();
+    if (!isLoc(loc)) return fail(loc, j);
     const exposureId = exposureOf();
     let r;
     if (kind === 'quick' || (kind === 'new' && !j)) {
-      setPhase('위치 확인 중');
-      const loc = await preciseLoc();
-      if (!isLoc(loc)) return fail(loc);
       setPhase('보내는 중');
       r =
         kind === 'quick'
@@ -185,13 +189,13 @@ export default function Report() {
         done || dups ? undefined : (
           <View style={{ flex: 1, gap: 8 }}>
             {job ? (
-              <Btn kind="blue" label="사진 이어서 보내기" busy={busy} onPress={() => void submit(job)} />
+              <Btn kind="blue" label="사진 이어서 보내기" disabled={access.restricted} busy={busy} onPress={() => void submit(job)} />
             ) : kind === 'quick' ? (
-              <Btn kind="blue" label="지금도 보여요 보내기" busy={busy} onPress={() => void (async () => (await ready(here)) && submit(null))()} />
+              <Btn kind="blue" label="지금도 보여요 보내기" disabled={access.restricted} busy={busy} onPress={() => void (async () => (await ready(here)) && submit(null))()} />
             ) : (
               <>
-                <Btn kind="blue" icon="flag" label="사진 찍고 보내기" busy={busy} disabled={kind === 'new' && !cat} onPress={() => void shoot()} />
-                {kind === 'new' ? <Btn label="사진 없이 간단히 보내기" busy={busy} disabled={!cat} onPress={() => void (async () => (await ready(here)) && submit(null))()} /> : null}
+                <Btn kind="blue" icon="flag" label="사진 찍고 보내기" busy={busy} disabled={access.restricted || (kind === 'new' && !cat)} onPress={() => void shoot()} />
+                {kind === 'new' ? <Btn label="사진 없이 간단히 보내기" busy={busy} disabled={access.restricted || !cat} onPress={() => void (async () => (await ready(here)) && submit(null))()} /> : null}
               </>
             )}
             {job ? <LinkBtn label="이 사진 버리기" c={color.err} onPress={() => discard(job)} /> : null}
@@ -214,10 +218,11 @@ export default function Report() {
           </Rows>
           <SecTitle>다른 문제라면 새 제보로</SecTitle>
           <TextInput value={reason} onChangeText={setReason} placeholder="기존 관찰과 다른 이유(필수, 200자)" maxLength={200} accessibilityLabel="새 제보 이유" style={{ minHeight: 52, paddingHorizontal: 14, borderWidth: 1, borderColor: color.lineStrong, borderRadius: 12, backgroundColor: color.panel, fontFamily: font[400], fontSize: 16, color: color.black }} />
-          <Btn label="새 제보로 남기기" disabled={!reason.trim() || busy} busy={busy} onPress={() => void submit(job, { action: 'CREATE_NEW' })} style={{ marginTop: 10 }} />
+          <Btn label="새 제보로 남기기" disabled={access.restricted || !reason.trim() || busy} busy={busy} onPress={() => void submit(job, { action: 'CREATE_NEW' })} style={{ marginTop: 10 }} />
         </View>
       ) : (
         <>
+          {access.restricted ? <Notice kind="warn" text={OUTSIDE_PARTICIPATION_TEXT} /> : null}
           {sessionId ? <Micro>운동 중 참여로 함께 기록돼요.</Micro> : null}
           {error ? (
             <View style={{ marginBottom: 8 }}>

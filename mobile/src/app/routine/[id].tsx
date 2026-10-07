@@ -1,3 +1,5 @@
+import { useParticipationAccess } from '../../proximity';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../../pilot-proximity';
 // 정기 관찰 지점: getRoutineDetail(회차·남은 자리·내 참여). 회차 판단은 서버 state를 그대로 쓴다.
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
@@ -10,6 +12,7 @@ import { Btn, LoadState, Micro, Notice, Rows, Row, Screen, SecTitle, Txt } from 
 type R = { id: string; name: string; roundHours: number; state: { round: { id: string; start: number; end: number }; mine: string | null; accounts: number; slotsLeft: number; welcomeToday: boolean } | null };
 
 export default function RoutineDetail() {
+  const access = useParticipationAccess();
   const router = useRouter();
   const { auth } = useSession();
   const { id, exposure } = useLocalSearchParams<{ id: string; exposure?: string }>();
@@ -35,7 +38,8 @@ export default function RoutineDetail() {
           ) : auth.status !== 'in' ? (
             <Micro>로그인하면 이번 회차 참여 여부를 볼 수 있어요.</Micro>
           ) : null}
-          <Btn kind="blue" label="사진으로 참여" disabled={participation.disabled} onPress={() => router.push(`/report?kind=routine&target=${r.id}${exposure ? '&exposure=' + exposure : ''}` as never)} />
+          <Btn kind="blue" label="사진으로 참여" disabled={participation.disabled || access.restricted} onPress={() => void access.open(`/report?kind=routine&target=${r.id}${exposure ? '&exposure=' + exposure : ''}`)} />
+          {access.restricted ? <Micro>{OUTSIDE_PARTICIPATION_TEXT}</Micro> : null}
           <SecTitle>촬영 전에 확인해 주세요</SecTitle>
           <Txt s={15}>사람의 얼굴이나 차량 번호가 들어가지 않도록 촬영해 주세요. 다른 장소의 사진이나 앨범 사진으로 참여할 수 없어요.</Txt>
           <Txt s={13} c={color.sub}>

@@ -1,3 +1,5 @@
+import { useParticipationAccess } from '../../proximity';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../../pilot-proximity';
 // 우리 우이천: 현장 관찰(지금 보이는 관찰·지난 기록)과 우이천 소식. getRiverFeed의 목록마다 커서를 따로 쓴다.
 // 소식 날짜는 셋을 섞지 않는다: 자료 날짜(pub+pubKind), 앱 게시일(publishedAt), 팀 확인일(checked).
 import { useState } from 'react';
@@ -76,8 +78,8 @@ function NewsItem({ n }: { n: News }) {
 }
 
 export default function RiverTab() {
+  const access = useParticipationAccess();
   const inset = useSafeAreaInsets();
-  const router = useRouter();
   const [pastOpen, setPastOpen] = useState(false);
   const [tab, setTab] = useState<'field' | 'news'>('field');
   const [topic, setTopic] = useState<'all' | 'eco' | 'proposal' | 'plan'>('all');
@@ -105,7 +107,8 @@ export default function RiverTab() {
       {tab === 'field' ? (
         <>
           {s ? <Micro>지금 보이는 관찰 {s.currentCount}건 · 지난 기록 {s.pastCount}건{s.updatedAt ? ' · 마지막 갱신 ' + kstDateTime(s.updatedAt) : ''}</Micro> : <LoadState loading={home.loading} error={home.error} onRetry={() => void home.reload()} />}
-          <Btn kind="blue" icon="flag" label="환경 제보" onPress={() => router.push('/report' as never)} style={{ marginTop: 12 }} />
+          <Btn kind="blue" icon="flag" label="환경 제보" disabled={access.restricted} onPress={() => void access.open('/report')} style={{ marginTop: 12 }} />
+          {access.restricted ? <Micro>{OUTSIDE_PARTICIPATION_TEXT}</Micro> : null}
           <IssueList field="current" cursor="currentCursor" title="지금 보이는 관찰" />
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: pastOpen }} onPress={() => setPastOpen(v => !v)} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
             <Txt w={700} s={19}>지난 기록{s ? ` ${s.pastCount}건` : ''}</Txt><Txt c={color.blue}>{pastOpen ? '접기' : '펼치기'}</Txt>

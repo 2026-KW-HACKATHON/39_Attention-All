@@ -1,3 +1,4 @@
+import { useParticipationAccess } from '../../proximity';
 // 지도(웹 프로토타입 지도 탭): 전체·코스·관찰·시설 보기. 관찰은 서버 페이지를 끝까지 이어 받는다(50건 넘어도 빠지지 않게).
 // 관찰 보기에서만 ‘지난 기록 포함’(회색 핀). 내 위치 버튼은 권한을 받은 뒤 카메라를 내 위치로 옮긴다.
 // 핀을 누르면 근처(30m)에 겹친 대상이 둘 이상이면 목록(스크롤)으로, 하나면 요약 카드로. 코스는 고르면 전체가 보이게 맞춘다.
@@ -76,6 +77,7 @@ export default function MapTab() {
 }
 
 function FullMap({ onBack }: { onBack?: () => void }) {
+  const access = useParticipationAccess();
   const router = useRouter();
   const inset = useSafeAreaInsets();
   const st = useStart();
@@ -220,7 +222,7 @@ function FullMap({ onBack }: { onBack?: () => void }) {
         <Icon name="locate" c={color.blue} />
       </Pressable>
       {sheet ? <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>{sheet}</View> : mode === 'all' ? (
-        <Btn kind="blue" icon="flag" label="환경 제보" onPress={() => router.push('/report' as never)} style={{ position: 'absolute', right: 12, bottom: 24, elevation: 6 }} />
+        <Btn kind="blue" icon="flag" label={access.restricted ? '환경 제보 · 범위 밖' : '환경 제보'} disabled={access.restricted} onPress={() => void access.open('/report')} style={{ position: 'absolute', right: 12, bottom: 24, elevation: 6 }} />
       ) : null}
       <Sheet open={!!group} onClose={() => setGroup(null)} title={`이 근처 ${group?.length ?? 0}곳`}>
         {(group ?? []).map(i => <ItemRow key={i.key} i={i} d={dist(i.pts)} onPress={() => choose(i)} />)}

@@ -189,7 +189,7 @@ async function stopUpdatesNow() {
 }
 
 // 시작: 정확한 위치 확인 → 서버 세션 생성. 서버 세션이 없으면 시작으로 표시하지 않는다(오프라인 시작 불가).
-export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null, prepared?: { loc: Loc; uid: string }): Promise<Result<Run>> {
+export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null, prepared?: { loc: Loc; uid: string; allowOutsidePilot?: boolean }): Promise<Result<Run>> {
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
   const existing = getRun();
@@ -199,7 +199,7 @@ export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null, pr
   if (!isLoc(loc)) return loc;
   if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
   if (!usablePosition(loc, Date.now())) return fail('LOCATION_STALE');
-  const r = await mutate<{ sessionId: string; startedAt: number }>('startRun', { mode, loc, ...(courseId ? { courseId } : {}) }, 'startRun');
+  const r = await mutate<{ sessionId: string; startedAt: number }>('startRun', { mode, loc, ...(courseId ? { courseId } : {}), ...(prepared?.allowOutsidePilot ? { allowOutsidePilot: true } : {}) }, 'startRun');
   if (!r.ok) {
     // 이미 진행 중인 세션이 있거나 응답을 잃었으면 서버 세션을 이어 받는다(새 세션을 만들지 않는다)
     if (r.errorCode === 'ACTIVE_SESSION_EXISTS' || r.retryable || r.errorCode === 'LOCATION_STALE') {

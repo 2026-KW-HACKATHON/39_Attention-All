@@ -15,7 +15,7 @@ export const START_TEXT: Record<string, string> = {
   PRECISE_LOCATION_REQUIRED: "정확한 위치를 허용해 주세요.",
   GPS_ACCURACY_TOO_LOW:
     "위치 정확도가 낮아요(30m 초과). 하늘이 보이는 곳에서 다시 시도해 주세요.",
-  OUTSIDE_PILOT: "우이천 파일럿 구간 안에서 시작할 수 있어요.",
+  OUTSIDE_PILOT: "우이천 산책로 100m 밖이에요. 다시 준비하고 참여 제한 안내를 확인하면 운동을 시작할 수 있어요.",
   AMBIGUOUS_LOCATION: "어느 산책로인지 정할 수 없는 위치예요.",
   REJECTED_MOCK: "가짜 위치로는 시작할 수 없어요.",
   COURSE_MODE_NOT_SUPPORTED: "이 코스는 선택한 운동 종류를 지원하지 않아요.",
