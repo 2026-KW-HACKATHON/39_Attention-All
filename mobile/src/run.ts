@@ -227,11 +227,16 @@ type Detail = ServerSession & { mode: 'RUN' | 'WALK'; courseId: string | null };
 export async function adoptServerSession(): Promise<Run | null> {
   const uid = getUid();
   if (!uid) return null;
+  const existing = getRun();
+  if (existing && existing.status !== 'ENDED') return existing;
   try {
     const my = await call<{ activeSession: string | null }>('getMy', {});
     if (!my.activeSession) return null;
     const d = await call<Detail>('getRunDetail', { sessionId: my.activeSession });
     if (getUid() !== uid) return null;
+    const current = getRun();
+    if (current !== existing) return current?.status !== 'ENDED' ? current : null;
+    if (!['ACTIVE', 'PAUSED'].includes(d.status)) return null;
     const run = blank(uid, d.id, d.mode, d.courseId, d.startedAt);
     Object.assign(run, { status: d.status === 'PAUSED' ? 'PAUSED' : 'ACTIVE', pauses: d.pauses, stored: d.track.length, distanceM: d.distanceM, localM: d.distanceM, tail: d.track.at(-1) ?? null, lastAt: d.track.at(-1)?.recordedAt ?? 0, gaps: 1 });
     d.track.forEach(t => addTrail(run.trail, t));
@@ -283,13 +288,13 @@ export async function recoverRun() {
   try {
     const d = await call<ServerSession>('getRunDetail', { sessionId: r0.sessionId });
     const r = getRun();
-    if (!r || r.uid !== uid || getUid() !== uid) return;
+    if (!r || r !== r0 || r.uid !== uid || getUid() !== uid) return;
     syncFromServer(r, d);
     put(r);
   } catch (e) {
     const f = toFailure(e);
     const r = getRun();
-    if (r && getUid() === uid && f.errorCode === 'NOT_FOUND') put({ ...r, problem: 'SESSION_CLOSED' });
+    if (r === r0 && getUid() === uid && f.errorCode === 'NOT_FOUND') put({ ...r, problem: 'SESSION_CLOSED' });
   }
   const r = getRun();
   if (!r || getUid() !== uid) return;

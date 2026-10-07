@@ -6,7 +6,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --test test/core.test.js test/conflicts.test.js test/latest.test.js test/web.test.js test/photo-access.test.js test/verification.test.js test/retouch.test.js test/retouch-news.test.js test/retouch-elevation.test.js test/retouch-publication-race.test.js test/retouch-v3.test.js test/recovery.test.js test/bridge-recovery.test.js test/mobile-connection.test.js test/mobile-run.test.js",
+    "test": "node --test test/core.test.js test/conflicts.test.js test/latest.test.js test/web.test.js test/photo-access.test.js test/verification.test.js test/retouch.test.js test/retouch-news.test.js test/retouch-elevation.test.js test/retouch-publication-race.test.js test/retouch-v3.test.js test/recovery.test.js test/bridge-recovery.test.js test/mobile-connection.test.js test/mobile-run.test.js test/store-account.test.js",
     "check": "node -e \"const {readdirSync}=require('node:fs');const {execFileSync}=require('node:child_process');for(const f of readdirSync('src').filter(f=>/\\.(js|cjs)$/.test(f)))execFileSync(process.execPath,['--check','src/'+f],{stdio:'inherit'})\"",
     "test:rules": "node --test test/rules.test.js"
   },
