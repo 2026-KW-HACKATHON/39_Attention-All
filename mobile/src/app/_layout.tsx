@@ -98,6 +98,7 @@ function StoreBanner() {
 
 // 개발 빌드 설정이 빠졌을 때만 보이는 안내. 운영 값을 임의로 만들지 않고 무엇이 빠졌는지만 알려준다.
 const SETUP_TEXT = {
+  APPCHECK_DEBUG_TOKEN_MISSING: '팀 테스트용 App Check 설정이 빠졌어요. 앱을 만든 담당자에게 테스트 APK를 다시 요청해 주세요.',
   TARGET_MISSING: 'mobile/.env.local에 EXPO_PUBLIC_UIRUN_TARGET=emulator 또는 firebase를 정한 뒤 Metro를 다시 시작해 주세요.',
   GOOGLE_SERVICES_MISSING: 'firebase 대상 빌드에는 mobile/google-services.json이 필요해요. 백엔드 담당자가 Android 앱을 등록한 뒤 받은 파일을 넣고 다시 빌드해 주세요.',
   PROJECT_MISMATCH: `google-services.json의 프로젝트가 ${CONFIG.projectId}가 아니에요. 올바른 파일로 바꾼 뒤 다시 빌드해 주세요.`,
