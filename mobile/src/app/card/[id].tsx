@@ -1,15 +1,17 @@
 // 사진 기록카드(웹 프로토타입 card): 사진 + 핵심 숫자 + 작은 우이런 로고. 4:5, 저장 이미지는 1080×1350.
 // 고른 사진(촬영·앨범)은 이 기기에서 카드를 만드는 데만 쓰고 어디에도 올리지 않는다. 환경 제보 증거 사진과 무관하다
 // (제보 사진은 capture.ts의 촬영 티켓·현장 촬영만). 기본 사진은 출처가 확인된 공공누리 사진만 쓰고 카드에 출처를 넣는다.
-import { useRef, useState } from 'react';
-import { Alert, Image, Pressable, View, useWindowDimensions, type GestureResponderEvent, type ImageSourcePropType } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Image, Pressable, View, useWindowDimensions, type GestureResponderEvent, type ImageSourcePropType } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library/legacy'; // SDK 57: 기본 경로의 함수형 API는 실행 시 예외(새 클래스 API로 이전 전까지 legacy 사용)
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { useApi } from '../../session';
+import { getUid, useApi } from '../../session';
+import { cardPhotoFlow, readCardDraft, saveCardDraft, subscribeCardDraft } from '../../card-photo-native';
+import type { CardDraft } from '../../card-photo';
 import { dur, km, pace } from '../../core';
 import { CARD_PHOTOS, LOGO, MODE_LABEL, PHOTOS, coursePhoto } from '../../content';
 import { color, font } from '../../theme';
@@ -38,13 +40,18 @@ export default function CardScreen() {
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const q = useApi<Run>('getRunDetail', { sessionId: id }, true);
-  const [pic, setPic] = useState<Pic | null>(null);
-  const [tone, setTone] = useState<'light' | 'dark'>('light');
-  const [view, setView] = useState({ zoom: 1, fx: 0.5, fy: 0.5 });
+  const [restored] = useState(() => readCardDraft(id));
+  const [pic, setPic] = useState<Pic | null>(restored?.pic ?? null);
+  const [tone, setTone] = useState<'light' | 'dark'>(restored?.tone ?? 'light');
+  const [view, setView] = useState(restored?.view ?? { zoom: 1, fx: 0.5, fy: 0.5 });
   const [sheet, setSheet] = useState(false);
-  const [busy, setBusy] = useState<'save' | 'share' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'share' | 'pick' | null>(null);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const shot = useRef<View>(null);
+  useEffect(() => subscribeCardDraft(() => {
+    const draft = readCardDraft(id);
+    if (draft && !draft.pending) { setPic(draft.pic); setTone(draft.tone); setView(draft.view); }
+  }), [id]);
   const W = width - 40, H = W * 1.25;
   const r = q.data;
   const cur = pic ?? (r ? defaultPic(r.courseId) : null);
@@ -78,17 +85,33 @@ export default function CardScreen() {
     setView({ zoom: 1, fx: 0.5, fy: 0.5 });
     if (p.kind === 'none') setTone('light');
     setSheet(false);
+    saveCardDraft({ id, pic: p, tone: p.kind === 'none' ? 'light' : tone, view: { zoom: 1, fx: .5, fy: .5 } });
   };
   const pickUser = async (camera: boolean) => {
-    if (camera) {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return Alert.alert('카메라 권한이 없어 촬영할 수 없어요.');
-    }
-    const res = camera
-      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.9, exif: false })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9, exif: false });
-    const a = !res.canceled ? res.assets[0] : null;
-    if (a) choose({ kind: 'user', uri: a.uri, w: a.width, h: a.height }); // 고르지 않고 닫으면 그대로
+    if (busy) return;
+    const uid = getUid();
+    if (!uid) return;
+    setBusy('pick'); setMsg(null);
+    // 선택창을 닫고 다음 화면 프레임에서 카메라를 연다.
+    setSheet(false);
+    try {
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      if (getUid() !== uid) return;
+      const draft: CardDraft = { id, pic: cur, tone, view };
+      const next = await cardPhotoFlow.pick(draft, async () => {
+        if (camera) {
+          const perm = await ImagePicker.requestCameraPermissionsAsync();
+          if (getUid() !== uid) return null;
+          if (!perm.granted) throw new Error('CAMERA_PERMISSION_DENIED');
+        }
+        return camera
+          ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.9, exif: false })
+          : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9, exif: false });
+      });
+      if (next && getUid() === uid) { setPic(next.pic); setTone(next.tone); setView(next.view); }
+    } catch (error) {
+      if (getUid() === uid) setMsg({ kind: 'err', text: (error as Error)?.message === 'CAMERA_PERMISSION_DENIED' ? '카메라 권한이 없어 촬영할 수 없어요.' : '사진을 가져오지 못했어요. 다시 시도해 주세요.' });
+    } finally { setBusy(null); }
   };
   const render = () => captureRef(shot, { format: 'png', width: 1080, height: 1350, result: 'tmpfile' });
   const save = async () => {
@@ -177,7 +200,7 @@ export default function CardScreen() {
       </View>
 
       <View style={{ gap: 10, marginTop: 14 }}>
-        <Btn kind="line" icon="image" label="사진 바꾸기" onPress={() => setSheet(true)} />
+        <Btn kind="line" icon="image" label="사진 바꾸기" disabled={!!busy} busy={busy === 'pick'} onPress={() => setSheet(true)} />
         <Seg label="글자 색" value={tone} onChange={setTone} options={[['light', '밝은 글자'], ['dark', '어두운 글자']]} />
         {src ? (
           <>

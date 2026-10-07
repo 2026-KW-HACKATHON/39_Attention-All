@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { CardPhotoRecovery } from '../card-photo-recovery';
 import { SessionProvider, useApi, useSession } from '../session';
 // 운동 위치 백그라운드 작업은 앱 시작 때 최상위에서 정의돼야 한다(TaskManager 요구사항).
 import '../run';
@@ -38,6 +39,7 @@ function Gate() {
       </Stack>
       <StoreBanner />
       <NotificationRouter />
+      <CardPhotoRecovery />
     </Scale.Provider>
   );
 }
