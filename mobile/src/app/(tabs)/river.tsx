@@ -1,12 +1,14 @@
 // 우리 우이천: 현장 관찰(지금 보이는 관찰·지난 기록)과 우이천 소식. getRiverFeed의 목록마다 커서를 따로 쓴다.
 // 소식 날짜는 셋을 섞지 않는다: 자료 날짜(pub+pubKind), 앱 게시일(publishedAt), 팀 확인일(checked).
 import { useState } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Image, Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { refresh, useApi } from '../../session';
 import { usePaged } from '../../paged';
 import { kstDateTime, type Home, type Issue, type News } from '../../core';
+import { PHOTOS } from '../../content';
+import { ObservationGuide } from '../../observation-guide';
 import { color, space } from '../../theme';
 import { Btn, Icon, LinkBtn, LoadState, Micro, Row, Rows, SecTitle, Seg, Txt } from '../../ui';
 
@@ -76,6 +78,7 @@ function NewsItem({ n }: { n: News }) {
 export default function RiverTab() {
   const inset = useSafeAreaInsets();
   const router = useRouter();
+  const [pastOpen, setPastOpen] = useState(false);
   const [tab, setTab] = useState<'field' | 'news'>('field');
   const [topic, setTopic] = useState<'all' | 'eco' | 'proposal' | 'plan'>('all');
   const home = useApi<Home>('getHome');
@@ -94,13 +97,21 @@ export default function RiverTab() {
       <Txt w={700} s={28} lh={1.25} style={{ marginTop: 4, marginBottom: 12 }}>
         우리 우이천
       </Txt>
+      <View style={{ borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
+        <Image source={PHOTOS.river.src} accessibilityLabel="우이천 분위기 사진" style={{ width: '100%', height: 148 }} resizeMode="cover" />
+      </View>
+      <Micro>우이천 초안교 부근 · 2020년 4월 사진. 지금 현장 모습은 아니에요. 출처: 서울연구원 서울연구데이터서비스(공공누리 제1유형).</Micro>
       <Seg label="우리 우이천 보기" value={tab} onChange={setTab} options={[['field', '현장 관찰'], ['news', '우이천 소식']]} />
       {tab === 'field' ? (
         <>
           {s ? <Micro>지금 보이는 관찰 {s.currentCount}건 · 지난 기록 {s.pastCount}건{s.updatedAt ? ' · 마지막 갱신 ' + kstDateTime(s.updatedAt) : ''}</Micro> : <LoadState loading={home.loading} error={home.error} onRetry={() => void home.reload()} />}
           <Btn kind="blue" icon="flag" label="환경 제보" onPress={() => router.push('/report' as never)} style={{ marginTop: 12 }} />
           <IssueList field="current" cursor="currentCursor" title="지금 보이는 관찰" />
-          <IssueList field="past" cursor="pastCursor" title="지난 기록" />
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: pastOpen }} onPress={() => setPastOpen(v => !v)} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+            <Txt w={700} s={19}>지난 기록{s ? ` ${s.pastCount}건` : ''}</Txt><Txt c={color.blue}>{pastOpen ? '접기' : '펼치기'}</Txt>
+          </Pressable>
+          {pastOpen ? <IssueList field="past" cursor="pastCursor" title="지난 기록 목록" /> : null}
+          <ObservationGuide />
           <Micro>관찰은 그때 보인 모습의 기록이에요. 수질이나 안전을 판정하지 않고, 기관에 자동으로 전달되지 않아요.</Micro>
         </>
       ) : (

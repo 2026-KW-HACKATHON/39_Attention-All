@@ -1,6 +1,6 @@
 # 팀원 Android 실기기 테스트
 
-PR #1의 `feat/mobile-foundation` 브랜치를 받아 테스트한다. 코드·CI·ARM64 개발 APK 빌드는 통과했고, Firebase 및 수정 서버 함수 배포는 완료됐다. 실기기 결과를 확인한 뒤 머지한다.
+PR #1이 머지된 최신 `main`을 받아 테스트한다. 코드·CI·ARM64 개발 APK 빌드는 통과했고, Firebase 및 수정 서버 함수 배포는 완료됐다. 실기기 검증은 기능 보완 후 전체 흐름으로 진행한다.
 
 ## 준비
 
@@ -11,7 +11,7 @@ PR #1의 `feat/mobile-foundation` 브랜치를 받아 테스트한다. 코드·C
 
 ```sh
 git fetch origin
-git switch feat/mobile-foundation
+git switch main
 git pull --ff-only
 cd mobile
 npm ci
