@@ -202,6 +202,7 @@ export async function upload(job: PhotoJob): Promise<Result<PhotoJob>> {
     if (!mine(job)) return fail('ACCOUNT_CHANGED');
     if (job.stage === 'READY' || job.stage === 'SUBMITTING') return { ok: true, value: job };
     if (!job.ticketId || !job.file || !job.capturedAt) return fail('PHOTO_REQUIRED');
+    let rejectedAttempts = 0; // 호출마다 초기화: 이전 실패 횟수 때문에 다음 재시도가 막히지 않는다.
     for (let i = 0; i < 40; i++) {
       if (!mine(job)) return fail('ACCOUNT_CHANGED');
       const st = await call<{ status: string }>('getPhotoStatus', { ticketId: job.ticketId });
@@ -225,9 +226,8 @@ export async function upload(job: PhotoJob): Promise<Result<PhotoJob>> {
           const code = String((e as { code?: string })?.code);
           if (!/unauthorized|permission/i.test(code)) return { ...toFailure(e), retryable: true }; // 통신 실패: 나중에 같은 파일로
           // 거절: 이전 업로드가 이미 도착해 덮어쓰기가 막힌 경우일 수 있다 → 상태를 몇 번 더 보고, 아니면 거절로 알린다
-          job.rejectedAt ??= i;
-          save(job);
-          if (i - job.rejectedAt >= 5) return fail('PHOTO_UPLOAD_REJECTED');
+          if (Date.now() >= job.capturedAt + 60 * 60 * 1000) return fail('PHOTO_TOO_OLD');
+          if (++rejectedAttempts >= 6) return fail('PHOTO_UPLOAD_REJECTED', true);
         }
       }
       await new Promise(r => setTimeout(r, 1000));

@@ -37,7 +37,7 @@ const LOCATION_TEXT: Record<string, string> = {
   SEAL_TOO_LATE: '촬영 직후 위치를 확인하지 못했어요. 나중 위치로 대신하지 않으니 다시 촬영해 주세요.',
   CAPTURE_TICKET_EXPIRED: '촬영 가능 시간이 지났어요. 다시 촬영해 주세요.',
   PHOTO_FAILED: '사진 처리에 실패했어요. 다시 촬영해 주세요.',
-  PHOTO_UPLOAD_REJECTED: '사진 업로드가 거절됐어요(촬영 후 1시간이 지났거나 촬영 확인이 끝나지 않았어요). 다시 촬영해 주세요.',
+  PHOTO_UPLOAD_REJECTED: '사진 저장 권한을 확인하지 못했어요. 사진은 기기에 보관하고 있으니 잠시 뒤 ‘사진 이어서 보내기’를 눌러 주세요.',
   PHOTO_PROCESSING: '사진을 처리하고 있어요. 잠시 뒤 이어서 보내 주세요.',
   CONSENT_REQUIRED: '약관 동의가 필요해요.',
   ALREADY_PARTICIPATED: '이미 참여한 관찰이에요.',

@@ -37,6 +37,7 @@ test('봉인 위치: 셔터 직후에 잰 위치만 쓰고, 늦으면 나중 위
   assert.equal(needsRetake('CAPTURE_TICKET_EXPIRED'), true); // 만료 티켓은 같은 사진으로 다시 보내지 않는다
   assert.equal(needsRetake('NETWORK'), false); // 통신 실패는 같은 사진·같은 요청으로 재시도
   assert.equal(needsRetake('PHOTO_NOT_READY'), false);
+  assert.equal(needsRetake('PHOTO_UPLOAD_REJECTED'), false); // 권한 오류만으로 보관한 사진을 버리지 않는다
 });
 
 test('이어갈 사진 작업: 같은 계정·목적·대상만. 다른 계정·다른 관찰·사진 없는 작업은 고르지 않는다', () => {

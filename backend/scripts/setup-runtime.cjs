@@ -1,6 +1,7 @@
 const {connect,project,number}=require('./cloud-client.cjs');
 (async()=>{const c=await connect(),iam=c('https://iam.googleapis.com','v1'),crm=c('https://cloudresourcemanager.googleapis.com','v1'),email=`uirun-runtime@${project}.iam.gserviceaccount.com`;try{await iam.get(`projects/${project}/serviceAccounts/${email}`);}catch(e){if(e.status!==404)throw e;await iam.post(`projects/${project}/serviceAccounts`,{accountId:'uirun-runtime',serviceAccount:{displayName:'UIRUN Functions runtime'}});}
- const policy=(await crm.post(`projects/${project}:getIamPolicy`,{})).body;
+ const policy=(await crm.post(`projects/${project}:getIamPolicy`,{options:{requestedPolicyVersion:3}})).body;
+ require('./storage-rules-iam.cjs').ensureStorageRulesBinding(policy,number);
  const grants=[['roles/datastore.user',email],['roles/firebaseauth.admin',email],['roles/eventarc.eventReceiver',email],['roles/run.invoker',email],['roles/pubsub.publisher',`service-${number}@gs-project-accounts.iam.gserviceaccount.com`],['roles/iam.serviceAccountTokenCreator',`service-${number}@gcp-sa-pubsub.iam.gserviceaccount.com`]];
  for(const[role,sa]of grants){let b=policy.bindings.find(b=>b.role===role&&!b.condition);if(!b){b={role,members:[]};policy.bindings.push(b);}if(!b.members.includes('serviceAccount:'+sa))b.members.push('serviceAccount:'+sa);}
  await crm.post(`projects/${project}:setIamPolicy`,{policy});

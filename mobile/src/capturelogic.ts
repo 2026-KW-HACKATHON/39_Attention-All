@@ -16,7 +16,7 @@ export const sealLocOk = (shotAt: number, now: number, measuredAt?: number) => n
 
 // 영구적으로 다시 쓸 수 없는 오류: 새로 촬영해야 한다(같은 사진·티켓으로 재시도하지 않는다)
 export const needsRetake = (code: string) =>
-  ['CAPTURE_TICKET_EXPIRED', 'PHOTO_FAILED', 'PHOTO_FILE_MISSING', 'INVALID_TICKET', 'PHOTO_ALREADY_CONSUMED', 'PHOTO_TOO_LARGE', 'PHOTO_NOT_JPEG', 'PHOTO_UPLOAD_REJECTED', 'SEAL_TOO_LATE', 'LOCATION_STALE', 'PHOTO_TOO_OLD'].includes(code);
+  ['CAPTURE_TICKET_EXPIRED', 'PHOTO_FAILED', 'PHOTO_FILE_MISSING', 'INVALID_TICKET', 'PHOTO_ALREADY_CONSUMED', 'PHOTO_TOO_LARGE', 'PHOTO_NOT_JPEG', 'SEAL_TOO_LATE', 'LOCATION_STALE', 'PHOTO_TOO_OLD'].includes(code);
 
 // 이 화면에서 이어갈 작업 고르기: 같은 계정·목적·대상이고 사진을 보관한 것 중 최신. 다른 목적·대상의 사진은 고르지 않는다.
 export type JobLike = { uid: string; purpose: string; targetId?: string; stage: string; file?: string; createdAt: number };

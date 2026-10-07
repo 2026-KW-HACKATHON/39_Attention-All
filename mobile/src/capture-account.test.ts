@@ -16,13 +16,14 @@ function harness() {
   const native = {
     permission: async () => ({ granted: true }),
     locate: async (): Promise<typeof loc | { ok: false; errorCode: string; details: Record<string, unknown>; retryable: boolean }> => loc,
+    upload: async () => {},
     call: async (name: string) => { calls.push(name); return name === 'getPhotoStatus' ? { status: 'PENDING' } : { capturedAt: Date.now() }; },
   };
   const imports: Record<string, unknown> = {
     'expo-image-picker': { requestCameraPermissionsAsync: () => native.permission(), launchCameraAsync: async () => ({ canceled: true, assets: [] }) },
     'expo-crypto': { randomUUID },
     'expo-file-system': { File: class { exists = true; } },
-    './firebase': { call: (name: string) => native.call(name), uploadEvidence: async () => { calls.push('uploadEvidence'); } },
+    './firebase': { call: (name: string) => native.call(name), uploadEvidence: async () => { calls.push('uploadEvidence'); await native.upload(); } },
     './session': { getUid: () => uid, mutate: async (name: string, payload: Record<string, unknown>) => { calls.push(name); requests.push({ name, payload }); return { ok: true, value: { ticketId: 'ticket', uploadPath: 'path', expiresAt: Date.now() + 60000 } }; } },
     './store': { readJson: () => ({}), writeJson: () => true, StoreError: class extends Error {} },
     './pilot-access': { participationLoc: () => native.locate() },
@@ -90,4 +91,27 @@ test('첫 카메라 권한 창을 15초 열어 두어도 촬영 티켓은 권한
   assert.equal(fixes, 2);
   const position = h.requests[0]?.payload.loc as { measuredAt: number };
   assert.equal(position.measuredAt, h.now());
+});
+
+ test('저장 권한 거절은 재시도 가능한 실패로 보관하고, 다음 시도에서 같은 사진이 READY가 되면 이어간다', async () => {
+  const h = harness(), j = job('SEALED');
+  j.rejectedAt = 39; // 이전 호출의 반복 횟수는 다음 시도의 제한에 영향을 주지 않는다.
+  h.native.upload = async () => { throw Object.assign(new Error('denied'), { code: 'storage/unauthorized' }); };
+  const result = await h.capture.upload(j);
+  assert.equal(!result.ok && result.errorCode, 'PHOTO_UPLOAD_REJECTED');
+  assert.equal(!result.ok && result.retryable, true);
+  assert.equal(j.file, 'photo.jpg');
+  assert.equal(h.calls.filter(x => x === 'uploadEvidence').length, 6);
+  h.native.call = async () => ({ status: 'READY' });
+  const retry = await h.capture.upload(j);
+  assert.equal(retry.ok, true); assert.equal(j.stage, 'READY');
+});
+ test('실제로 촬영 후 한 시간이 지난 거절은 재촬영 대상으로 구분한다', async () => {
+  const h = harness(), j = job('SEALED');
+  j.capturedAt = h.now();
+  h.advance(3600001);
+  h.native.upload = async () => { throw Object.assign(new Error('denied'), { code: 'storage/unauthorized' }); };
+  const result = await h.capture.upload(j);
+  assert.equal(!result.ok && result.errorCode, 'PHOTO_TOO_OLD');
+  assert.equal(!result.ok && result.retryable, false);
 });

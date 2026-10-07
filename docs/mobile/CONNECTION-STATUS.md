@@ -25,6 +25,16 @@
 
 공식 설정 참고: [Play Integrity](https://firebase.google.com/docs/app-check/android/play-integrity-provider), [API 키 제한](https://docs.cloud.google.com/api-keys/docs/add-restrictions-api-keys).
 
+## 사진 업로드 운영 권한 (2026-10-08)
+
+Storage Rules에서 `firestore.get/exists`로 촬영 확인 정보를 읽을 때는 Firebase Storage 서비스 계정에 `roles/firebaserules.firestoreServiceAgent`가 필요하다. 운영 프로젝트에 이 역할이 빠져 있어 봉인된 사진도 업로드가 거절됐다. 역할을 추가했고 초기 설정 `backend/scripts/setup-runtime.cjs`에도 포함했다. Firebase CLI의 `--non-interactive` 배포는 이 권한 확인을 건너뛰므로 규칙 배포 성공만으로 업로드 준비 완료를 판단하지 않는다.
+
+기존 프로젝트에서는 저장소 루트에서 `node backend/scripts/ensure-storage-rules-access.cjs`로 필요한 역할만 추가·확인한다. 기존 IAM 조건과 etag를 보존하며, 재실행해도 중복 권한을 만들지 않는다. [공식 cross-service 규칙 안내](https://firebase.google.com/docs/rules/manage-deploy).
+
+실제 운영 저장소에 임시 계정과 비공개 검증용 촬영 티켓을 만들어 `DISCOVERY`, `DISCOVERY_PHOTO`, `ROUTINE`의 인증된 JPEG 업로드(HTTP200)와 서버 사진 처리 READY를 확인했다. 덮어쓰기·미봉인·한 시간 경과·다른 소유자 업로드는 HTTP403이었다. 임시 계정·사진·티켓은 모두 제거했고 공개 제보나 포인트는 생성하지 않았다. 전체 제보 제출 정책은 별도 Emulator API 검증으로 확인한다. 이 검증은 Android 카메라·Storage SDK 실기기 실행을 대신하지 않는다.
+
+앱 v0.1.4는 알 수 없는 저장 권한 오류를 시간 초과로 단정하지 않고 사진을 보관하여 재시도를 허용한다. 실제 한 시간 경과로 거절된 사진은 재촬영 안내를 유지한다. 사용자가 보고한 운동·기록카드·앨범 동작은 기기 확인 내용이며, 수정 후 사진 업로드의 기기 확인은 추후 진행한다.
+
 ## 검증 범위
 
 - 백엔드 단위 테스트: 144 통과.

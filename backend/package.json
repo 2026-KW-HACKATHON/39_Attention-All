@@ -2,7 +2,7 @@
   "name": "uirun-backend-workspace",
   "private": true,
   "scripts": {
-    "test": "npm --prefix functions test",
+    "test": "npm --prefix functions test && node --test scripts/storage-rules-iam.test.cjs",
     "check": "npm --prefix functions run check && node scripts/check-web.cjs",
     "emulators": "firebase emulators:start --project demo-uirun --only auth,firestore,functions,storage",
     "test:rules": "firebase emulators:exec --project demo-uirun --only firestore,storage 'npm --prefix functions run test:rules'",
