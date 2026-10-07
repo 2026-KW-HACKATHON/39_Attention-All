@@ -93,12 +93,12 @@ export function removeFile(name: string) {
   }
 }
 
-// 이름이 prefix로 시작하는 JSON 파일(임시·손상 보관 파일 제외)
+// 이름이 prefix로 시작하는 JSON 파일. 본 파일 없이 임시 파일만 남았어도 readJson으로 복구한다(손상 보관 파일 제외).
 export function listJson(prefix: string) {
-  return new Directory(Paths.document)
-    .list()
-    .map(e => e.name)
-    .filter(n => n.startsWith(prefix) && n.endsWith('.json'));
+  const names = new Directory(Paths.document).list().map(e => e.name);
+  return [...new Set(names
+    .filter(n => n.startsWith(prefix) && (n.endsWith('.json') || n.endsWith('.json.tmp')))
+    .map(n => n.endsWith('.tmp') ? n.slice(0, -4) : n))];
 }
 export const fileExists = (name: string) => file(name).exists;
 

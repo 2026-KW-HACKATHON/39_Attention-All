@@ -190,6 +190,18 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         JSON.stringify({ ...row, sessionIds: undefined, byApi: undefined }),
       );
     }
+    const sameAccount = await client("same-account");
+    const consent = { clientRequestId: randomUUID(), version: "v2-2026-10", accepted: true };
+    const consentResults = await Promise.all([invoke(sameAccount, "recordConsent", consent), invoke(sameAccount, "recordConsent", consent)]);
+    assert.deepEqual(consentResults[0], consentResults[1]);
+    const startData = () => ({ clientRequestId: randomUUID(), mode: "WALK", loc: { lat: 37.62, lng: 127.05, accuracyM: 8, measuredAt: Date.now(), precise: true } });
+    const starts = await Promise.allSettled([invoke(sameAccount, "startRun", startData()), invoke(sameAccount, "startRun", startData())]);
+    assert.equal(starts.filter(r => r.status === "fulfilled").length, 1);
+    assert.match(starts.find(r => r.status === "rejected").reason.message, /ACTIVE_SESSION_EXISTS/);
+    const active = starts.find(r => r.status === "fulfilled").value;
+    await invoke(sameAccount, "discardRun", { clientRequestId: randomUUID(), sessionId: active.sessionId });
+    report.accountSafety = { duplicateConsent: true, singleActiveRun: true };
+    console.log(JSON.stringify({ accountSafety: report.accountSafety }));
   } finally {
     for (const app of apps) await deleteApp(app);
     for (const uid of created) await auth.deleteUser(uid);

@@ -7,7 +7,7 @@ const { onObjectFinalized } = require("firebase-functions/v2/storage");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const sharp = require("sharp");
 const { randomUUID } = require("node:crypto");
-const { execute, readModel, READS, MUTATIONS } = require("./service");
+const { readModel, READS, MUTATIONS } = require("./service");
 const V = require("./validation");
 const P = require("./policy.cjs");
 const Store = require("./store");
@@ -69,9 +69,7 @@ for (const name of MUTATIONS)
   exports[name] = onCall(options, async (req) => {
     try {
       if (name === "setPhotoPublication") return await require("./photo-callables").publish(context(req),data(req));
-      return await Store.transact((d) =>
-        execute(d, context(req), name, data(req), Date.now()),
-      );
+      return await Store.mutate(context(req), name, data(req));
     } catch (e) {
       throw error(e);
     }

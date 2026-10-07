@@ -7,7 +7,7 @@
     "emulators": "firebase emulators:start --project demo-uirun --only auth,firestore,functions,storage",
     "test:rules": "firebase emulators:exec --project demo-uirun --only firestore,storage 'npm --prefix functions run test:rules'",
     "test:smoke": "firebase emulators:exec --project demo-uirun --only auth,firestore,functions,storage 'node functions/test/smoke.cjs'",
-    "test:integration": "firebase emulators:exec --project demo-uirun --only auth,firestore,functions,storage \"npm --prefix functions run test:rules && node functions/test/smoke.cjs && node verification/prepare.cjs && node verification/run.cjs && node verification/maintenance.cjs\"",
+    "test:integration": "firebase emulators:exec --project demo-uirun --only auth,firestore,functions,storage \"npm --prefix functions run test:rules && node functions/test/smoke.cjs && node verification/prepare.cjs && node verification/run.cjs && node verification/maintenance.cjs && GCLOUD_PROJECT=demo-uirun UIRUN_LOAD_CONFIRM=isolated-demo FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 UIRUN_FUNCTIONS_EMULATOR_HOST=127.0.0.1:5001 node verification/load.cjs\"",
     "emulators:keep": "firebase emulators:start --project demo-uirun --only auth,firestore,functions,storage --import=./.emulator-data --export-on-exit=./.emulator-data",
     "test:load-core": "node --test verification/load-core.test.cjs",
     "test:load": "node verification/load.cjs"

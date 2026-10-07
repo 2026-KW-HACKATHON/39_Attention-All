@@ -8,7 +8,7 @@
 
 | 항목 | 값 |
 |---|---|
-| Android `applicationId` | `com.attentionall.uirun` — **잠정 제안값**. 저장소·팀에 확정된 값이 없어 이 값으로 개발했다. 등록 전에 팀이 확정해 주면 `mobile/app.config.ts`의 `APPLICATION_ID` 한 곳만 바꾼다. 등록 후 바꾸면 앱을 다시 등록해야 한다. |
+| Android `applicationId` | `com.attentionall.uirun` — Firebase에 등록된 값. `mobile/app.config.ts`의 `APPLICATION_ID`와 일치해야 한다. 변경하면 Firebase 앱을 다시 등록해야 한다. |
 | 앱 이름 | 우이런 |
 | 개발 방식 | Expo SDK 57 **Development Build**(Continuous Native Generation, `npx expo prebuild`) · React Native 0.86 · New Architecture. Expo Go로는 실행하지 않는다. |
 | Firebase SDK | `@react-native-firebase/app`·`auth`·`functions`·`storage`·`app-check` 26.4.0(모듈식 API) |

@@ -106,11 +106,13 @@ function keep(job: PhotoJob, uri: string): Result<PhotoJob> {
 
 // 1) 티켓 발급 → 2) 카메라 → 3) 사진 보관 → 4) 봉인
 export async function capture(purpose: Purpose, targetId?: string, categoryCode?: string, sessionId?: string): Promise<Result<PhotoJob>> {
-  const cam = await ImagePicker.requestCameraPermissionsAsync();
-  if (!cam.granted) return fail('CAMERA_PERMISSION_DENIED');
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
+  const cam = await ImagePicker.requestCameraPermissionsAsync();
+  if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
+  if (!cam.granted) return fail('CAMERA_PERMISSION_DENIED');
   const loc = await preciseLoc();
+  if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
   if (!isLoc(loc)) return loc;
   const job: PhotoJob = { id: Crypto.randomUUID(), uid, key: jobKey(purpose, targetId, categoryCode), purpose, targetId, categoryCode, sessionId, stage: 'TICKETED', createdAt: Date.now() };
   const t = await mutate<{ ticketId: string; uploadPath: string; expiresAt: number }>(
@@ -119,6 +121,7 @@ export async function capture(purpose: Purpose, targetId?: string, categoryCode?
     'ticket:' + job.id,
   );
   if (!t.ok) return t;
+  if (!mine(job)) return fail('ACCOUNT_CHANGED');
   Object.assign(job, { ticketId: t.value.ticketId, uploadPath: t.value.uploadPath, expiresAt: t.value.expiresAt });
   save(job); // 카메라가 열린 동안 앱이 정리돼도 이 티켓으로 이어간다(resumeShot)
   const shot = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.6, exif: false });
@@ -141,6 +144,7 @@ export async function seal(job: PhotoJob): Promise<Result<PhotoJob>> {
   if (job.stage === 'CAPTURED') {
     if (!sealLocOk(job.shotAt ?? 0, Date.now())) return fail('SEAL_TOO_LATE');
     const loc = await preciseLoc();
+    if (!mine(job)) return fail('ACCOUNT_CHANGED');
     if (!isLoc(loc)) return loc;
     if (!sealLocOk(job.shotAt ?? 0, Date.now(), loc.measuredAt)) return fail('SEAL_TOO_LATE');
     Object.assign(job, { stage: 'SEAL_PENDING', sealLoc: loc, sealReq: Crypto.randomUUID() });
@@ -153,6 +157,7 @@ export async function seal(job: PhotoJob): Promise<Result<PhotoJob>> {
   } catch (e) {
     return toFailure(e);
   }
+  if (!mine(job)) return fail('ACCOUNT_CHANGED');
   const f = domainFailure(v);
   if (f) return f;
   Object.assign(job, { stage: 'SEALED', capturedAt: (v as { capturedAt: number }).capturedAt, pin: [job.sealLoc!.lat, job.sealLoc!.lng] });
@@ -188,10 +193,13 @@ export async function upload(job: PhotoJob): Promise<Result<PhotoJob>> {
       const s = await seal(job);
       if (!s.ok) return s;
     }
+    if (!mine(job)) return fail('ACCOUNT_CHANGED');
     if (job.stage === 'READY' || job.stage === 'SUBMITTING') return { ok: true, value: job };
     if (!job.ticketId || !job.file || !job.capturedAt) return fail('PHOTO_REQUIRED');
     for (let i = 0; i < 40; i++) {
+      if (!mine(job)) return fail('ACCOUNT_CHANGED');
       const st = await call<{ status: string }>('getPhotoStatus', { ticketId: job.ticketId });
+      if (!mine(job)) return fail('ACCOUNT_CHANGED');
       if (st.status === 'READY') {
         job.stage = 'READY';
         save(job);
@@ -204,6 +212,7 @@ export async function upload(job: PhotoJob): Promise<Result<PhotoJob>> {
           job.stage = 'UPLOADING';
           save(job);
           await uploadEvidence(job.uploadPath!, job.file);
+          if (!mine(job)) return fail('ACCOUNT_CHANGED');
           job.uploaded = true;
           save(job);
         } catch (e) {
