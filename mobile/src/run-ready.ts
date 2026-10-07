@@ -20,7 +20,7 @@ type Outcome<T> =
 type Dependencies<T> = {
   uid: () => string | null;
   now: () => number;
-  locate: () => Promise<Loc | { ok: false; errorCode: string }>;
+  locate: (permissionPending: (pending: boolean) => void) => Promise<Loc | { ok: false; errorCode: string }>;
   start: (loc: Loc, uid: string) => Promise<Outcome<T>>;
   delay: () => Promise<void>;
   changed: (s: PreparationState) => void;
@@ -41,7 +41,9 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       uncertain: false,
     },
     generation = 0,
-    owner: string | null = null;
+    owner: string | null = null,
+    permissionPending = false,
+    foreground = true;
   const publish = (patch: Partial<PreparationState>) => {
     state = { ...state, ...patch };
     deps.changed(state);
@@ -58,6 +60,12 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       publish({ phase: "cancelled", count: 0 });
       return true;
     },
+    appStateChanged(value: string) {
+      foreground = value === "active";
+      if (foreground || permissionPending || state.phase === "starting" || state.phase === "done") return;
+      generation++;
+      publish({ phase: "cancelled", count: 0 });
+    },
     blur() {
       if (state.phase === "starting" || state.phase === "done") return;
       generation++;
@@ -67,6 +75,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       if (["locating", "countdown", "starting", "done"].includes(state.phase))
         return;
       const g = ++generation;
+      permissionPending = false;
       owner = deps.uid();
       if (!owner) return error("UNAUTHENTICATED");
       publish({
@@ -79,7 +88,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         const result = await Promise.race([
-          deps.locate(),
+          deps.locate((pending) => { if (g === generation) permissionPending = pending; }),
           new Promise<{ ok: false; errorCode: string }>((r) => {
             timer = setTimeout(
               () => r({ ok: false, errorCode: "LOCATION_TIMEOUT" }),
@@ -95,11 +104,12 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       } catch {
         if (g === generation) error("LOCATION_UNAVAILABLE");
       } finally {
+        if (g === generation) permissionPending = false;
         clearTimeout(timer);
       }
     },
     async begin() {
-      if (state.phase !== "ready" || !state.loc || !owner) return;
+      if (!foreground || state.phase !== "ready" || !state.loc || !owner) return;
       const g = generation,
         loc = state.loc,
         uid = owner;

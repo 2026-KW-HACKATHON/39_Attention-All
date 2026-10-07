@@ -207,3 +207,38 @@ test("ambiguous server start failure is not presented as a confirmed failure", a
   await p.prepare();
   assert.equal(p.state.uncertain, false);
 });
+
+test("permission prompt app-state transition preserves GPS preparation and resume permits start", async () => {
+  const d = deferred<ReturnType<typeof loc>>();
+  let permission!: (pending: boolean) => void;
+  const p = createPreparation({
+    uid: () => 'a', now: () => 1000,
+    locate: (pending) => { permission = pending; pending(true); return d.promise; },
+    start: async () => ({ ok: true as const, value: 1 }), delay: async () => {}, changed: () => {},
+  });
+  const work = p.prepare();
+  p.appStateChanged('background');
+  assert.equal(p.state.phase, 'locating');
+  permission(false);
+  d.resolve(loc());
+  await work;
+  await p.begin();
+  assert.equal(p.state.phase, 'ready', 'background cannot create workout');
+  p.appStateChanged('active');
+  await p.begin();
+  assert.equal(p.state.phase, 'done');
+});
+
+test("actual background while locating or counting down still cancels preparation", async () => {
+  const d = deferred<ReturnType<typeof loc>>();
+  const p = createPreparation({ uid: () => 'a', now: () => 1000, locate: () => d.promise,
+    start: async () => ({ ok: true as const, value: 1 }), delay: async () => {}, changed: () => {} });
+  const work = p.prepare();
+  p.appStateChanged('background');
+  d.resolve(loc());
+  await work;
+  assert.equal(p.state.phase, 'cancelled');
+  const s = setup(); await s.p.prepare(); const start = s.p.begin();
+  s.p.appStateChanged('background'); s.waits[0].resolve(); await start;
+  assert.equal(s.starts(), 0);
+});

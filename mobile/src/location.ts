@@ -15,15 +15,20 @@ export const toLoc = (p: Location.LocationObject): Loc => ({
   ...(p.mocked ? { mock: true as const } : {}),
 });
 
-export async function askPrecise(): Promise<Failure | null> {
-  const r = await Location.requestForegroundPermissionsAsync();
+export async function askPrecise(permissionPending?: (pending: boolean) => void): Promise<Failure | null> {
+  let r = await Location.getForegroundPermissionsAsync();
+  if (r.status !== 'granted') {
+    permissionPending?.(true);
+    try { r = await Location.requestForegroundPermissionsAsync(); }
+    finally { permissionPending?.(false); }
+  }
   if (r.status !== 'granted') return fail('LOCATION_PERMISSION_DENIED');
   if (r.android && r.android.accuracy !== 'fine') return fail('PRECISE_LOCATION_REQUIRED');
   return null;
 }
 
-export async function preciseLoc(): Promise<Loc | Failure> {
-  const denied = await askPrecise();
+export async function preciseLoc(permissionPending?: (pending: boolean) => void): Promise<Loc | Failure> {
+  const denied = await askPrecise(permissionPending);
   if (denied) return denied;
   try {
     // Google 위치 정확도 동의 창은 앱이 띄우지 않는다(거절하면 요청이 실패한다). 그때는 10초 안의 최근 GPS 값을 쓴다.
