@@ -17,6 +17,7 @@ import { askNotificationPermission } from "../notify";
 import { Btn, Micro, Notice, Num, Screen, SecTitle, Txt } from "../ui";
 import { MODE_LABEL } from "../content";
 import { color } from "../theme";
+import { errorText } from "../core";
 
 export default function RunReady() {
   const router = useRouter(),
@@ -29,6 +30,7 @@ export default function RunReady() {
     count: 0,
     loc: null,
     error: null,
+    uncertain: false,
   });
   const [prep] = useState(() =>
     createPreparation({
@@ -120,7 +122,9 @@ export default function RunReady() {
                   : state.phase === "cancelled"
                     ? "준비가 멈췄어요"
                     : state.phase === "error"
-                      ? "다시 확인해 주세요"
+                      ? state.uncertain
+                        ? "시작 여부를 확인하지 못했어요"
+                        : "다시 확인해 주세요"
                       : ""}
         </Txt>
         {state.loc && state.phase === "ready" ? (
@@ -131,8 +135,15 @@ export default function RunReady() {
         <Notice
           kind="err"
           text={
-            START_TEXT[state.error] ??
-            "시작하지 못했어요. 연결을 확인하고 다시 시도해 주세요."
+            state.uncertain
+              ? "서버에서 운동이 시작됐을 수 있어요. 연결을 확인하고 다시 준비해 주세요. 재시도하면 서버의 진행 중인 운동을 이어 받아요."
+              : (START_TEXT[state.error] ??
+                errorText({
+                  ok: false,
+                  errorCode: state.error,
+                  details: {},
+                  retryable: false,
+                }))
           }
         />
       ) : null}
@@ -142,7 +153,7 @@ export default function RunReady() {
       {!busy && state.phase !== "ready" && state.phase !== "done" ? (
         <Btn
           kind="blue"
-          label="위치 다시 확인"
+          label="다시 준비"
           onPress={() => void prep.prepare()}
         />
       ) : null}

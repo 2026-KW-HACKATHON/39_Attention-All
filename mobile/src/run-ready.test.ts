@@ -186,3 +186,24 @@ test("screen blur cancels pending countdown but preserves an already submitted s
   await submitted;
   assert.equal(p.state.phase, "done");
 });
+
+test("ambiguous server start failure is not presented as a confirmed failure", async () => {
+  const p = createPreparation({
+    uid: () => "a",
+    now: () => 1000,
+    locate: async () => loc(),
+    start: async () => ({
+      ok: false as const,
+      errorCode: "NETWORK",
+      retryable: true,
+    }),
+    delay: async () => {},
+    changed: () => {},
+  });
+  await p.prepare();
+  await p.begin();
+  assert.equal(p.state.uncertain, true);
+  assert.equal(p.state.phase, "error");
+  await p.prepare();
+  assert.equal(p.state.uncertain, false);
+});

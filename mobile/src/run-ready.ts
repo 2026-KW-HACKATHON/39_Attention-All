@@ -12,8 +12,11 @@ export type PreparationState = {
   count: number;
   loc: Loc | null;
   error: string | null;
+  uncertain: boolean;
 };
-type Outcome<T> = { ok: true; value: T } | { ok: false; errorCode: string };
+type Outcome<T> =
+  | { ok: true; value: T }
+  | { ok: false; errorCode: string; retryable?: boolean };
 type Dependencies<T> = {
   uid: () => string | null;
   now: () => number;
@@ -35,6 +38,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       count: 0,
       loc: null,
       error: null,
+      uncertain: false,
     },
     generation = 0,
     owner: string | null = null;
@@ -42,8 +46,8 @@ export function createPreparation<T>(deps: Dependencies<T>) {
     state = { ...state, ...patch };
     deps.changed(state);
   };
-  const error = (code: string) =>
-    publish({ phase: "error", error: code, count: 0 });
+  const error = (code: string, uncertain = false) =>
+    publish({ phase: "error", error: code, count: 0, uncertain });
   return {
     get state() {
       return state;
@@ -65,7 +69,13 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       const g = ++generation;
       owner = deps.uid();
       if (!owner) return error("UNAUTHENTICATED");
-      publish({ phase: "locating", error: null, loc: null, count: 0 });
+      publish({
+        phase: "locating",
+        error: null,
+        loc: null,
+        count: 0,
+        uncertain: false,
+      });
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         const result = await Promise.race([
@@ -94,6 +104,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         loc = state.loc,
         uid = owner;
       publish({ phase: "countdown", count: 3, error: null });
+      let submitted = false;
       try {
         for (let count = 3; count > 0; count--) {
           publish({ count });
@@ -103,14 +114,16 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
         if (!usablePosition(loc, deps.now())) return error("LOCATION_STALE");
         publish({ phase: "starting", count: 0 });
+        submitted = true;
         const result = await deps.start(loc, uid);
         if (g !== generation) return;
         if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
-        if (!result.ok) return error(result.errorCode);
+        if (!result.ok)
+          return error(result.errorCode, result.retryable === true);
         publish({ phase: "done" });
         return result.value;
       } catch {
-        if (g === generation) error("NETWORK");
+        if (g === generation) error("NETWORK", submitted);
       }
     },
   };
