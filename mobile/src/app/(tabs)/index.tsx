@@ -1,5 +1,5 @@
 // 홈: 사진 + 날씨 + 운동 시작 패널(접힘/펼침). 웹 프로토타입 viewHome/viewHomeSimple과 같은 구성.
-// 실제 조회: getHome(코스), getWeather(날씨), 로그인 시 getMy(포인트·웰컴). 운동 기록·제보는 아직 연결 전이라 누르면 알린다.
+// 실제 조회: getHome(코스), getWeather(날씨), 로그인 시 getMy(포인트·웰컴). 운동 시작은 준비 화면을 거쳐 서버 세션을 만든다.
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, BackHandler, Easing, Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';

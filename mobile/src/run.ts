@@ -1,3 +1,4 @@
+import { usablePosition } from './run-ready';
 // 운동 기록: 실제 GPS → 기기 파일에 즉시 저장 → 묶어서 순서대로 서버 전송(appendTrack) → 일시정지·재개·종료.
 // 화면이 꺼져도 Android Foreground Service(지속 알림)로 위치를 받는다(expo-location 백그라운드 작업).
 // 강제 종료·최근 앱에서 제거 뒤에는 수집이 끊길 수 있다. 다시 열면 서버 세션과 맞춰 복구하고 끊긴 구간을 표시한다.
@@ -188,13 +189,16 @@ async function stopUpdatesNow() {
 }
 
 // 시작: 정확한 위치 확인 → 서버 세션 생성. 서버 세션이 없으면 시작으로 표시하지 않는다(오프라인 시작 불가).
-export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null): Promise<Result<Run>> {
+export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null, prepared?: { loc: Loc; uid: string }): Promise<Result<Run>> {
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
   const existing = getRun();
   if (existing && existing.status !== 'ENDED') return { ok: true, value: existing };
-  const loc = await preciseLoc();
+  if (prepared && prepared.uid !== uid) return fail('ACCOUNT_CHANGED');
+  const loc = prepared?.loc ?? await preciseLoc();
   if (!isLoc(loc)) return loc;
+  if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
+  if (!usablePosition(loc, Date.now())) return fail('LOCATION_STALE');
   const r = await mutate<{ sessionId: string; startedAt: number }>('startRun', { mode, loc, ...(courseId ? { courseId } : {}) }, 'startRun');
   if (!r.ok) {
     // 이미 진행 중인 세션이 있거나 응답을 잃었으면 서버 세션을 이어 받는다(새 세션을 만들지 않는다)

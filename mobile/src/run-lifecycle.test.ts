@@ -52,6 +52,7 @@ function harness() {
       removeFile: (n: string) => files.delete(n),
     },
     './location': {},
+    './run-ready': require('./run-ready.ts'),
     './core': require('./core.ts'),
     './runlogic': require('./runlogic.ts'),
   };
