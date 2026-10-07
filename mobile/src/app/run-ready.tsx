@@ -51,7 +51,6 @@ export default function RunReady() {
       );
       return () => {
         back.remove();
-        prep.blur();
       };
     }, [prep]),
   );
@@ -68,24 +67,21 @@ export default function RunReady() {
       return;
     }
     void prep.prepare();
+    return () => { prep.cancel(); };
+  }, [prep, router]);
+  // Replacing navigation subscriptions must not cancel an in-flight GPS request.
+  // Only actual route departure, unmount or app background cancels preparation.
+  useEffect(() => {
     const remove = navigation.addListener("beforeRemove", () => {
-      if (prep.state.phase !== "starting" && prep.state.phase !== "done")
-        prep.cancel();
+      if (prep.state.phase !== "starting" && prep.state.phase !== "done") prep.cancel();
     });
-    const app = AppState.addEventListener("change", (s) => {
-      if (
-        s !== "active" &&
-        prep.state.phase !== "starting" &&
-        prep.state.phase !== "done"
-      )
-        prep.cancel();
-    });
-    return () => {
-      prep.cancel();
-      remove();
-      app.remove();
-    };
-  }, [navigation, prep, router]);
+    const blur = navigation.addListener("blur", () => prep.blur());
+    return () => { remove(); blur(); };
+  }, [navigation, prep]);
+  useEffect(() => {
+    const app = AppState.addEventListener("change", (s) => prep.appStateChanged(s));
+    return () => app.remove();
+  }, [prep]);
   const begin = () => prep.begin();
   const close = () => {
     if (prep.cancel()) router.back();
