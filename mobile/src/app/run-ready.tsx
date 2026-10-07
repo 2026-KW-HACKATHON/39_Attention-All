@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppState, BackHandler, View } from "react-native";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { usePreventRemove } from "expo-router/react-navigation";
 import { createPreparation, type PreparationState } from "../run-ready";
 import { preciseLoc } from "../location";
 import { getUid } from "../session";
@@ -23,7 +24,6 @@ export default function RunReady() {
     loc: null,
     error: null,
   });
-  const mounted = useRef(true);
   const [prep] = useState(() =>
     createPreparation({
       uid: getUid,
@@ -34,8 +34,14 @@ export default function RunReady() {
       changed: setState,
     }),
   );
+  usePreventRemove(state.phase === "starting", () => {});
   useEffect(() => {
-    mounted.current = true;
+    if (state.phase === "done") {
+      router.replace("/run");
+      void askNotificationPermission();
+    }
+  }, [state.phase, router]);
+  useEffect(() => {
     if (getRun()) {
       router.replace("/run");
       return;
@@ -45,9 +51,8 @@ export default function RunReady() {
       "hardwareBackPress",
       () => prep.state.phase === "starting",
     );
-    const remove = navigation.addListener("beforeRemove", (e) => {
-      if (prep.state.phase === "starting") e.preventDefault();
-      else prep.cancel();
+    const remove = navigation.addListener("beforeRemove", () => {
+      if (prep.state.phase !== "starting" && prep.state.phase !== "done") prep.cancel();
     });
     const app = AppState.addEventListener("change", (s) => {
       if (
@@ -58,20 +63,13 @@ export default function RunReady() {
         prep.cancel();
     });
     return () => {
-      mounted.current = false;
       prep.cancel();
       back.remove();
       remove();
       app.remove();
     };
   }, [navigation, prep, router]);
-  const begin = async () => {
-    const r = await prep.begin();
-    if (r && mounted.current) {
-      router.replace("/run");
-      void askNotificationPermission();
-    }
-  };
+  const begin = () => prep.begin();
   const close = () => {
     if (prep.cancel()) router.back();
   };
