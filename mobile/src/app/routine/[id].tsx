@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useApi, useSession } from '../../session';
 import { kstDateTime } from '../../core';
+import { routineView } from '../../routine-view';
 import { color } from '../../theme';
 import { Btn, LoadState, Micro, Notice, Rows, Row, Screen, SecTitle, Txt } from '../../ui';
 
@@ -14,6 +15,7 @@ export default function RoutineDetail() {
   const { id, exposure } = useLocalSearchParams<{ id: string; exposure?: string }>();
   const q = useApi<R>('getRoutineDetail', { missionId: id });
   const r = q.data;
+  const participation = routineView(r?.state ?? null);
   return (
     <Screen title={r?.name ?? '정기 관찰'} onClose={() => router.back()}>
       {!r ? (
@@ -26,14 +28,14 @@ export default function RoutineDetail() {
             <>
               <Rows>
                 <Row title="이번 회차" sub={`${kstDateTime(r.state.round.start)} ~ ${kstDateTime(r.state.round.end)}`} />
-                <Row title="참여 현황" sub={`${r.state.accounts}명 참여 · ${r.state.slotsLeft}자리 남음`} />
+                <Row title="참여 현황" sub={participation.summary} />
               </Rows>
-              {r.state.mine ? <Notice kind="ok" text="이번 회차에는 이미 참여했어요. 다음 회차에 다시 기록해 주세요." /> : r.state.slotsLeft <= 0 ? <Notice kind="warn" text="이번 회차의 참여 자리가 찼어요. 다음 회차에 다시 확인해 주세요." /> : null}
+              {r.state.mine ? <Notice kind="ok" text="이번 회차에는 이미 참여했어요. 다음 회차에 다시 기록해 주세요." /> : participation.rewardLimit ? <Notice kind="warn" text="오늘 정기 관찰 적립 한도를 다 썼어요. 사진 기록은 계속 남길 수 있어요." /> : null}
             </>
           ) : auth.status !== 'in' ? (
             <Micro>로그인하면 이번 회차 참여 여부를 볼 수 있어요.</Micro>
           ) : null}
-          <Btn kind="blue" label="사진으로 참여" disabled={!!r.state?.mine || (r.state != null && r.state.slotsLeft <= 0)} onPress={() => router.push(`/report?kind=routine&target=${r.id}${exposure ? '&exposure=' + exposure : ''}` as never)} />
+          <Btn kind="blue" label="사진으로 참여" disabled={participation.disabled} onPress={() => router.push(`/report?kind=routine&target=${r.id}${exposure ? '&exposure=' + exposure : ''}` as never)} />
           <SecTitle>촬영 전에 확인해 주세요</SecTitle>
           <Txt s={15}>사람의 얼굴이나 차량 번호가 들어가지 않도록 촬영해 주세요. 다른 장소의 사진이나 앨범 사진으로 참여할 수 없어요.</Txt>
           <Txt s={13} c={color.sub}>

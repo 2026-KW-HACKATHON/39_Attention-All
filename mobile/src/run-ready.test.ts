@@ -158,3 +158,31 @@ test("start failure releases countdown and allows retry; cancellation is locked 
   await p.prepare();
   assert.equal(p.state.phase, "ready");
 });
+
+test("screen blur cancels pending countdown but preserves an already submitted session", async () => {
+  const s = setup();
+  await s.p.prepare();
+  const done = s.p.begin();
+  s.p.blur();
+  s.waits[0].resolve();
+  await done;
+  assert.equal(s.starts(), 0);
+  assert.equal(s.p.state.phase, "cancelled");
+  const pending = deferred<{ ok: true; value: number }>();
+  const p = createPreparation({
+    uid: () => "a",
+    now: () => 1000,
+    locate: async () => loc(),
+    start: () => pending.promise,
+    delay: async () => {},
+    changed: () => {},
+  });
+  await p.prepare();
+  const submitted = p.begin();
+  for (let i = 0; i < 6; i++) await Promise.resolve();
+  p.blur();
+  assert.equal(p.state.phase, "starting");
+  pending.resolve({ ok: true, value: 1 });
+  await submitted;
+  assert.equal(p.state.phase, "done");
+});

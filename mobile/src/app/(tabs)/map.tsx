@@ -194,7 +194,7 @@ function FullMap({ onBack }: { onBack?: () => void }) {
               return [
                 <Polyline key={c.key + 'c'} coordinates={c.pts.map(ll)} strokeColor={color.white} strokeWidth={on ? 11 : 6} zIndex={on ? 4 : 1} />,
                 <Polyline key={c.key + 'r'} coordinates={c.pts.map(ll)} strokeColor={on ? color.blue : sel?.startsWith('course:') ? 'rgba(56,75,240,0.3)' : 'rgba(56,75,240,0.5)'} strokeWidth={on ? 6 : 3} zIndex={on ? 5 : 2} tappable onPress={() => choose(c)} />,
-                ...(on ? directionArrows(c.pts).map((a, j) => <Marker key={c.key + 'arrow' + j} coordinate={ll(a.at)} anchor={{ x: 0.5, y: 0.5 }} zIndex={6} onPress={() => choose(c)}><View style={{ transform: [{ rotate: `${a.bearing}deg` }], backgroundColor: color.white, borderRadius: 14, padding: 3 }}><Txt w={800} s={16} c={color.blue}>↑</Txt></View></Marker>) : []),
+                ...(on ? directionArrows(c.pts).map((a, j) => <Marker key={c.key + 'arrow' + j} coordinate={ll(a.at)} flat rotation={a.bearing} anchor={{ x: 0.5, y: 0.5 }} zIndex={6} onPress={() => choose(c)}><View style={{ backgroundColor: color.white, borderRadius: 14, padding: 3 }}><Txt w={800} s={16} c={color.blue}>↑</Txt></View></Marker>) : []),
                 on ? null : <Marker key={c.key + 'd'} coordinate={ll(c.at)} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} onPress={() => choose(c)}><View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: color.white, borderWidth: 3, borderColor: color.blue }} /></Marker>,
               ];
             })

@@ -47,7 +47,7 @@
     "prebuild": "expo prebuild --platform android --clean",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/core.test.ts src/runlogic.test.ts src/flows.test.ts src/run-lifecycle.test.ts src/run-ready.test.ts src/map-display.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/core.test.ts src/runlogic.test.ts src/flows.test.ts src/run-lifecycle.test.ts src/run-ready.test.ts src/map-display.test.ts src/routine-view.test.ts",
     "doctor": "expo-doctor"
   },
   "private": true

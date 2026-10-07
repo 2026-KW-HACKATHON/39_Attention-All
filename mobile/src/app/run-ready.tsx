@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppState, BackHandler, View } from "react-native";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import {
+  useFocusEffect,
+  useIsFocused,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
 import { createPreparation, type PreparationState } from "../run-ready";
 import { preciseLoc } from "../location";
@@ -34,25 +40,35 @@ export default function RunReady() {
       changed: setState,
     }),
   );
+  const focused = useIsFocused();
+  useFocusEffect(
+    useCallback(() => {
+      const back = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => prep.state.phase === "starting",
+      );
+      return () => {
+        back.remove();
+        prep.blur();
+      };
+    }, [prep]),
+  );
   usePreventRemove(state.phase === "starting", () => {});
   useEffect(() => {
-    if (state.phase === "done") {
+    if (state.phase === "done" && focused) {
       router.replace("/run");
       void askNotificationPermission();
     }
-  }, [state.phase, router]);
+  }, [state.phase, router, focused]);
   useEffect(() => {
     if (getRun()) {
       router.replace("/run");
       return;
     }
     void prep.prepare();
-    const back = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => prep.state.phase === "starting",
-    );
     const remove = navigation.addListener("beforeRemove", () => {
-      if (prep.state.phase !== "starting" && prep.state.phase !== "done") prep.cancel();
+      if (prep.state.phase !== "starting" && prep.state.phase !== "done")
+        prep.cancel();
     });
     const app = AppState.addEventListener("change", (s) => {
       if (
@@ -64,7 +80,6 @@ export default function RunReady() {
     });
     return () => {
       prep.cancel();
-      back.remove();
       remove();
       app.remove();
     };

@@ -113,7 +113,7 @@ type MutationFailure = {ok:false;errorCode:string;details?:object;retryable?:boo
 - `Observation`: 본인 기록, modality,role,issueId?/missionId?,photo?:{id,path},observedAt,acceptedAt?,visibility,reward,points,pointsPending. **photo 객체를 img.src에 넣지 않는다**. photo.id로 getPhotoAccess 조회. 원 제보가 숨김/삭제돼도 참여 기록은 남을 수 있으므로 제목은 안전한 대체 문구 사용.
 - `PublicObservation`: id,modality,observedAt,acceptedAt,role만. 공개 상세에는 사용자/사진 없음.
 - `Ledger`: id,uid,amount,status,type,label,sourceId?,issueId?,createdAt 등. status=CONFIRMED/PENDING/EXPIRED/REJECTED/REVERSED. 과거 참여 당시 포인트보다 현재 reward/ledger 상태 우선.
-- `RoutineState`: round{id,start,end},mine(string|null),accounts,slotsLeft,welcomeToday. 미로그인은 state=null. 로컬 round를 재계산해 서버 참여 여부를 덮지 않는다.
+- `RoutineState`: round{id,start,end},mine(string|null),accounts,slotsLeft,welcomeToday. `slotsLeft`는 계정의 오늘 정기 관찰 적립 가능 횟수이며 회차 참여 정원이 아니다. 0이어도 사진 기록을 보낼 수 있고 서버가 ROUTINE_DAILY_LIMIT로 저장한다. `mine`이 있을 때만 같은 회차 중복 참여를 막는다. 미로그인은 state=null. 로컬 round를 재계산해 서버 참여 여부를 덮지 않는다.
 - `Merchant`: id,name,isDemo만; PIN/해시/salt 없음. catalog는 단일 WELCOME_500 운영, stock/title/condition/validDays/merchantId/isDemo. 미등록이면 catalog=[]; 준비 중 표시하고 발급 CTA 비활성화.
 - `Coupon`: id,rewardId,merchantId,status,issuedAt,expiresAt,window?,failCount,lockedUntil 등. status=ISSUED/USE_REQUESTED/USED/EXPIRED/REVOKED. window={useSessionId,endsAt}. merchantId로 상호 연결. 예시 여부는 merchant/catalog.isDemo로 표시.
 - 수정본3: 새 제보 자체는 재확인에 포함하지 않아 `signalCount=0`, `lastSignalAt=null`로 시작한다. 다른 계정의 QUICK 재확인만 집계하며 철회하면 제외한다.

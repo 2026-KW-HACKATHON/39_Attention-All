@@ -54,6 +54,11 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       publish({ phase: "cancelled", count: 0 });
       return true;
     },
+    blur() {
+      if (state.phase === "starting" || state.phase === "done") return;
+      generation++;
+      publish({ phase: "cancelled", count: 0 });
+    },
     async prepare() {
       if (["locating", "countdown", "starting", "done"].includes(state.phase))
         return;
