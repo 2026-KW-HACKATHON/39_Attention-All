@@ -31,7 +31,7 @@ const [AUTH_PORT, FUNCTIONS_PORT, STORAGE_PORT] = (process.env.EXPO_PUBLIC_EMULA
 const extra = (Constants.expoConfig?.extra ?? {}) as { applicationId?: string; hasGoogleServices?: boolean; googleWebClientId?: string | null };
 export const APPLICATION_ID = extra.applicationId ?? null;
 
-export type SetupProblem = 'TARGET_MISSING' | 'GOOGLE_SERVICES_MISSING' | 'PROJECT_MISMATCH' | 'FIREBASE_INIT_FAILED' | 'EMULATOR_IN_RELEASE';
+export type SetupProblem = 'TARGET_MISSING' | 'GOOGLE_SERVICES_MISSING' | 'PROJECT_MISMATCH' | 'FIREBASE_INIT_FAILED' | 'EMULATOR_IN_RELEASE' | 'APPCHECK_DEBUG_TOKEN_MISSING';
 export class SetupError extends Error {
   problem: SetupProblem;
   constructor(problem: SetupProblem) {
@@ -86,12 +86,16 @@ async function init(): Promise<Client> {
     throw new SetupError('FIREBASE_INIT_FAILED');
   }
   if (app.options.projectId !== CONFIG.projectId) throw new SetupError('PROJECT_MISMATCH');
-  // 개발 빌드는 debug provider(토큰을 Firebase 콘솔에 등록해야 통과), 릴리스는 Play Integrity.
+  // 개발·명시적인 팀 내부 설치 테스트는 등록된 debug provider, 일반 릴리스는 Play Integrity.
+  // 내부 테스트 APK에는 테스트 토큰이 포함되므로 공개 배포하지 않는다.
   // 서버의 enforceAppCheck를 끄거나 우회하지 않는다. 웹 reCAPTCHA 키는 쓰지 않는다.
-  const appCheckProvider = __DEV__ ? 'debug' : 'playIntegrity';
+  const internalTest = process.env.EXPO_PUBLIC_UIRUN_INTERNAL_TEST === 'true';
+  const debugAppCheck = __DEV__ || internalTest;
+  if (internalTest && !process.env.EXPO_PUBLIC_APPCHECK_DEBUG_TOKEN) throw new SetupError('APPCHECK_DEBUG_TOKEN_MISSING');
+  const appCheckProvider = debugAppCheck ? 'debug' : 'playIntegrity';
   const provider = new ReactNativeFirebaseAppCheckProvider();
   provider.configure({
-    android: { provider: appCheckProvider, debugToken: __DEV__ ? process.env.EXPO_PUBLIC_APPCHECK_DEBUG_TOKEN || undefined : undefined },
+    android: { provider: appCheckProvider, debugToken: debugAppCheck ? process.env.EXPO_PUBLIC_APPCHECK_DEBUG_TOKEN || undefined : undefined },
     apple: { provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback' },
   });
   const appCheck = initializeAppCheck(app, { provider, isTokenAutoRefreshEnabled: true });

@@ -204,3 +204,16 @@ node scripts/seed-test-news.cjs unpublish  # 이 3건만 게시 내림(삭제하
 한글 경로의 Reanimated/Worklets 네이티브 참조 오류를 피하려면 실제 영문 경로에 체크아웃한다. 이 Mac에서는 같은 커밋의 `/Users/taemin/Developer/uirun-android-build/mobile`에서 ARM64 debug APK 빌드가 성공했다. Firebase 로컬 설정 파일도 이 체크아웃에 구성되어 있다. `npm run android`로 실행하며 Metro가 필요하다. 실제 기기 연결 점검 범위는 [연결 상태](../docs/mobile/CONNECTION-STATUS.md)를 참고한다.
 
 팀원에게 실기기 테스트를 넘길 때는 [Android 테스트 안내](../docs/mobile/ANDROID-TEAM-TEST.md)를 따른다.
+
+## PC 없이 설치하는 팀 내부 테스트 APK
+
+`EXPO_PUBLIC_UIRUN_TARGET=firebase`, 등록된 지도/Firebase 설정과 팀 테스트 전용 `EXPO_PUBLIC_APPCHECK_DEBUG_TOKEN`을 준비한다. 내부 테스트에만 `EXPO_PUBLIC_UIRUN_INTERNAL_TEST=true`를 명시한다. 일반 릴리스는 이 값을 `false`로 두고 Play Integrity를 사용한다.
+
+네이티브 프로젝트 생성 후 영문 경로에서 아래를 실행한다. 현재 팀 내부 APK는 등록된 개발 서명으로 서명하며 앱 코드를 포함한다. 스토어 배포용 서명은 별도로 준비한다.
+
+```sh
+cd android
+NODE_ENV=production EXPO_PUBLIC_UIRUN_INTERNAL_TEST=true ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a
+```
+
+`app/build/outputs/apk/release/app-release.apk`를 팀에 파일로 전달한다. Metro가 필요하지 않다. 내부 테스트 토큰이 포함되므로 APK·토큰·개인 연결 파일은 공개 GitHub나 공개 다운로드 링크에 올리지 않는다.
