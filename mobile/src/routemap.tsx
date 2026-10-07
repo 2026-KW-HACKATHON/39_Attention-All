@@ -7,21 +7,18 @@ import Constants from 'expo-constants';
 import MapView, { Circle as MapCircle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Svg, { Circle, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { linePath, projector, type LatLng } from './core';
+import { mapRegion, routeSegments } from './map-display';
 import { color, font } from './theme';
 import { Micro, Txt } from './ui';
 
 export const hasMapsKey = !!(Constants.expoConfig?.extra as { hasMapsKey?: boolean } | undefined)?.hasMapsKey;
 const ll = (p: LatLng) => ({ latitude: p[0], longitude: p[1] });
 
-export function region(pts: LatLng[], pad = 1.35) {
-  const lats = pts.map(p => p[0]), lngs = pts.map(p => p[1]);
-  const minA = Math.min(...lats), maxA = Math.max(...lats), minO = Math.min(...lngs), maxO = Math.max(...lngs);
-  return { latitude: (minA + maxA) / 2, longitude: (minO + maxO) / 2, latitudeDelta: Math.max(0.002, (maxA - minA) * pad), longitudeDelta: Math.max(0.002, (maxO - minO) * pad) };
-}
+export const region = mapRegion;
 
 export function RouteMap({ segs, height = 240, empty }: { segs: LatLng[][]; height?: number; empty: string }) {
   const [w, setW] = useState(0);
-  const lines = segs.filter(s => s.length > 1);
+  const lines = routeSegments(segs.flatMap((s, segment) => s.map(p => ({ lat: p[0], lng: p[1], segment }))));
   if (!lines.length)
     return (
       <View style={{ height: 120, marginTop: 4, marginBottom: 14, borderRadius: 14, backgroundColor: '#EEF0F5', alignItems: 'center', justifyContent: 'center' }}>

@@ -13,7 +13,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useApi } from '../../session';
 import { usePaged } from '../../paged';
 import { useStart } from '../../start';
+import { ObservationGuide } from '../../observation-guide';
 import { hasMapsKey, region } from '../../routemap';
+import { clusterPins, directionArrows, type Region } from '../../map-display';
 import { nearestM } from '../../exposure';
 import { distM } from '../../runlogic';
 import { issueCurrent, linePath, projector, type Category, type Course, type Facility, type Issue, type LatLng, type MapData, type Routine } from '../../core';
@@ -82,6 +84,8 @@ function FullMap({ onBack }: { onBack?: () => void }) {
   const [sel, setSel] = useState<string | null>(null);
   const [group, setGroup] = useState<Item[] | null>(null);
   const [here, setHere] = useState<Here>(null);
+  const [viewport, setViewport] = useState<Region | null>(null);
+  const [mapSize, setMapSize] = useState({ width: 0, height: 0 });
   const mapRef = useRef<MapView>(null);
   const x = useItems(mode === 'issue' && old);
   const showC = mode === 'all' || mode === 'course', showI = mode === 'all' || mode === 'issue', showF = mode === 'all' || mode === 'fac';
@@ -139,6 +143,7 @@ function FullMap({ onBack }: { onBack?: () => void }) {
           </View>
         ) : null}
       </View>
+      {mode === 'issue' ? <ObservationGuide /> : null}
       {mode === 'issue' && old ? (
         <View style={{ padding: 10, paddingHorizontal: 14, borderRadius: 12, backgroundColor: color.panel, elevation: 3, marginRight: 52 }}>
           <Txt s={14}>회색 핀은 참여가 끝났거나 사진이 오래된 지난 기록이에요. 해결 여부와는 관계없어요.</Txt>
@@ -177,9 +182,11 @@ function FullMap({ onBack }: { onBack?: () => void }) {
     );
 
   const first = x.courses[0]?.pts ?? x.paths.flatMap(p => p.points);
+  const initial = region(first);
+  const clusters = clusterPins(pins, viewport ?? initial, mapSize.width, mapSize.height);
   return (
     <View style={{ flex: 1 }}>
-      <MapView ref={mapRef} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={first.length ? region(first) : { latitude: 37.618, longitude: 127.057, latitudeDelta: 0.02, longitudeDelta: 0.02 }} showsUserLocation={!!here} showsMyLocationButton={false} toolbarEnabled={false} onPress={() => setSel(null)}>
+      <MapView ref={mapRef} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={initial} onRegionChangeComplete={setViewport} onLayout={e => setMapSize(e.nativeEvent.layout)} showsUserLocation={!!here} showsMyLocationButton={false} toolbarEnabled={false} onPress={() => setSel(null)}>
         {x.paths.map((p, i) => <Polyline key={'w' + i} coordinates={p.points.map(ll)} strokeColor="rgba(216,230,243,0.9)" strokeWidth={14} />)}
         {showC
           ? x.courses.map(c => {
@@ -187,6 +194,7 @@ function FullMap({ onBack }: { onBack?: () => void }) {
               return [
                 <Polyline key={c.key + 'c'} coordinates={c.pts.map(ll)} strokeColor={color.white} strokeWidth={on ? 11 : 6} zIndex={on ? 4 : 1} />,
                 <Polyline key={c.key + 'r'} coordinates={c.pts.map(ll)} strokeColor={on ? color.blue : sel?.startsWith('course:') ? 'rgba(56,75,240,0.3)' : 'rgba(56,75,240,0.5)'} strokeWidth={on ? 6 : 3} zIndex={on ? 5 : 2} tappable onPress={() => choose(c)} />,
+                ...(on ? directionArrows(c.pts).map((a, j) => <Marker key={c.key + 'arrow' + j} coordinate={ll(a.at)} anchor={{ x: 0.5, y: 0.5 }} zIndex={6} onPress={() => choose(c)}><View style={{ transform: [{ rotate: `${a.bearing}deg` }], backgroundColor: color.white, borderRadius: 14, padding: 3 }}><Txt w={800} s={16} c={color.blue}>↑</Txt></View></Marker>) : []),
                 on ? null : <Marker key={c.key + 'd'} coordinate={ll(c.at)} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} onPress={() => choose(c)}><View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: color.white, borderWidth: 3, borderColor: color.blue }} /></Marker>,
               ];
             })
@@ -197,9 +205,13 @@ function FullMap({ onBack }: { onBack?: () => void }) {
             <Marker coordinate={ll(picked.pts[0])} anchor={{ x: 0.15, y: 0.5 }} zIndex={7}><EndTag icon="play" label="출발·도착" bg={color.lime} fg={color.black} /></Marker>
           </>
         ) : null}
-        {pins.map(i => (
-          <Marker key={i.key} coordinate={ll(i.at)} anchor={i.kind === 'issue' ? { x: 0.5, y: 1 } : { x: 0.5, y: 0.5 }} zIndex={i.key === sel ? 9 : i.kind === 'fac' ? 1 : 3} onPress={() => tapPin(i)}>
-            <Pin i={i} on={i.key === sel} />
+        {clusters.map(g => g.members.length > 1 ? (
+          <Marker key={'cluster:' + g.key} coordinate={ll(g.at)} zIndex={5} onPress={() => setGroup(g.members)}>
+            <View accessibilityLabel={`관찰 ${g.members.length}건`} style={{ minWidth: 44, minHeight: 44, paddingHorizontal: 10, borderRadius: 22, backgroundColor: color.deep, borderWidth: 3, borderColor: color.white, alignItems: 'center', justifyContent: 'center' }}><Txt w={800} s={17} c={color.white}>{g.members.length}</Txt></View>
+          </Marker>
+        ) : (
+          <Marker key={g.key} coordinate={ll(g.at)} anchor={g.members[0].kind === 'issue' ? { x: 0.5, y: 1 } : { x: 0.5, y: 0.5 }} zIndex={g.key === sel ? 9 : g.members[0].kind === 'fac' ? 1 : 3} onPress={() => tapPin(g.members[0])}>
+            <Pin i={g.members[0]} on={g.key === sel} />
           </Marker>
         ))}
       </MapView>
