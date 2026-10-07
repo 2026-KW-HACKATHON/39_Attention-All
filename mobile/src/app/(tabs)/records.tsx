@@ -1,3 +1,5 @@
+import { useParticipationAccess } from '../../proximity';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../../pilot-proximity';
 // 기록(웹 프로토타입 기록 탭): 운동 기록과 환경 참여 이력.
 // 운동: 기간(7일·30일·12개월·전체) 합계는 서버 집계(getWorkoutStats)만 쓰고, 막대를 누르면 그 날(달)의 값을 보여준다.
 //       아래 목록은 같은 기간의 운동만(getRecords runs 페이지). 간편 화면은 최근 기록 카드 + 최근 7일 합계 + 지난 기록.
@@ -187,6 +189,7 @@ function Thumb({ o }: { o: Observation }) {
 }
 
 function Env({ simple }: { simple: boolean }) {
+  const access = useParticipationAccess();
   const router = useRouter();
   const title = useObsTitle();
   const my = useApi<My & { participationStats?: { total: number; report: number; recheck: number; routine: number; recheckPhoto: number; recheckQuick: number } }>('getMy', {}, true);
@@ -239,7 +242,8 @@ function Env({ simple }: { simple: boolean }) {
       {list.done && !list.items.length ? (
         <View style={{ paddingVertical: 32, gap: 16 }}>
           <Txt c={color.sub}>아직 환경 참여 기록이 없어요.</Txt>
-          <Btn kind="blue" icon="flag" label="첫 환경 제보 남기기" onPress={() => router.push('/report' as never)} />
+          {access.restricted ? <Micro>{OUTSIDE_PARTICIPATION_TEXT}</Micro> : null}
+          <Btn kind="blue" icon="flag" label="첫 환경 제보 남기기" disabled={access.restricted} onPress={() => void access.open('/report')} />
         </View>
       ) : null}
       {simple && !more && list.items.length > 5 ? (

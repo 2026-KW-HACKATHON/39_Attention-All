@@ -4,6 +4,7 @@ export type PreparationState = {
     | "idle"
     | "locating"
     | "ready"
+    | "confirming"
     | "countdown"
     | "starting"
     | "done"
@@ -21,7 +22,9 @@ type Dependencies<T> = {
   uid: () => string | null;
   now: () => number;
   locate: (permissionPending: (pending: boolean) => void) => Promise<Loc | { ok: false; errorCode: string }>;
-  start: (loc: Loc, uid: string) => Promise<Outcome<T>>;
+  start: (loc: Loc, uid: string, allowOutsidePilot?: boolean) => Promise<Outcome<T>>;
+  outsidePilot?: (loc: Loc) => Promise<boolean>;
+  confirmOutside?: () => Promise<boolean>;
   delay: () => Promise<void>;
   changed: (s: PreparationState) => void;
   timeoutMs?: number;
@@ -50,6 +53,20 @@ export function createPreparation<T>(deps: Dependencies<T>) {
   };
   const error = (code: string, uncertain = false) =>
     publish({ phase: "error", error: code, count: 0, uncertain });
+  const locate = async (g: number) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        deps.locate((pending) => { if (g === generation) permissionPending = pending; }),
+        new Promise<{ ok: false; errorCode: string }>((resolve) => {
+          timer = setTimeout(() => resolve({ ok: false, errorCode: "LOCATION_TIMEOUT" }), deps.timeoutMs ?? 20000);
+        }),
+      ]);
+    } finally {
+      if (g === generation) permissionPending = false;
+      clearTimeout(timer);
+    }
+  };
   return {
     get state() {
       return state;
@@ -72,7 +89,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
       publish({ phase: "cancelled", count: 0 });
     },
     async prepare() {
-      if (["locating", "countdown", "starting", "done"].includes(state.phase))
+      if (["locating", "confirming", "countdown", "starting", "done"].includes(state.phase))
         return;
       const g = ++generation;
       permissionPending = false;
@@ -85,17 +102,8 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         count: 0,
         uncertain: false,
       });
-      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        const result = await Promise.race([
-          deps.locate((pending) => { if (g === generation) permissionPending = pending; }),
-          new Promise<{ ok: false; errorCode: string }>((r) => {
-            timer = setTimeout(
-              () => r({ ok: false, errorCode: "LOCATION_TIMEOUT" }),
-              deps.timeoutMs ?? 20000,
-            );
-          }),
-        ]);
+        const result = await locate(g);
         if (g !== generation) return;
         if (deps.uid() !== owner) return error("ACCOUNT_CHANGED");
         if ("ok" in result) return error(result.errorCode);
@@ -103,19 +111,46 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         publish({ phase: "ready", loc: result });
       } catch {
         if (g === generation) error("LOCATION_UNAVAILABLE");
-      } finally {
-        if (g === generation) permissionPending = false;
-        clearTimeout(timer);
       }
     },
     async begin() {
       if (!foreground || state.phase !== "ready" || !state.loc || !owner) return;
-      const g = generation,
-        loc = state.loc,
-        uid = owner;
-      publish({ phase: "countdown", count: 3, error: null });
+      const g = generation, uid = owner;
+      let loc = state.loc, allowOutsidePilot = false;
       let submitted = false;
       try {
+        if (deps.outsidePilot) {
+          publish({ phase: "confirming", count: 0, error: null });
+          if (!usablePosition(loc, deps.now())) {
+            const current = await locate(g);
+            if (g !== generation) return;
+            if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
+            if ("ok" in current) return error(current.errorCode);
+            loc = current;
+          }
+          if (!usablePosition(loc, deps.now())) return error("LOCATION_STALE");
+          const outside = await deps.outsidePilot(loc);
+          if (g !== generation) return;
+          if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
+          if (outside) {
+            const confirmed = await deps.confirmOutside?.();
+            if (g !== generation) return;
+            if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
+            if (!confirmed) { publish({ phase: "ready", count: 0 }); return; }
+            if (!foreground) return;
+            allowOutsidePilot = true;
+            // 확인 창을 오래 열어 두어도 오래된 위치로 시작하지 않는다.
+            publish({ phase: "locating", count: 0 });
+            const current = await locate(g);
+            if (g !== generation) return;
+            if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
+            if ("ok" in current) return error(current.errorCode);
+            loc = current;
+          }
+          if (!usablePosition(loc, deps.now())) return error("LOCATION_STALE");
+          publish({ loc });
+        }
+        publish({ phase: "countdown", count: 3, error: null });
         for (let count = 3; count > 0; count--) {
           publish({ count });
           await deps.delay();
@@ -125,7 +160,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         if (!usablePosition(loc, deps.now())) return error("LOCATION_STALE");
         publish({ phase: "starting", count: 0 });
         submitted = true;
-        const result = await deps.start(loc, uid);
+        const result = await deps.start(loc, uid, allowOutsidePilot);
         if (g !== generation) return;
         if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
         if (!result.ok)

@@ -198,6 +198,7 @@ function readModel(d, auth, name, data = {}, now = Date.now()) {
   if (name === "getPilotData")
     return {
       paths: d.geometry.paths,
+      participationRadiusM: V.PARTICIPATION_RADIUS_M,
       facilities: Object.values(d.facilities),
       courses: Object.values(d.courses),
       categories: P.CAT,
@@ -408,7 +409,10 @@ function perform(d, auth, name, x, t) {
   if (name === "startRun") {
     if (!["RUN", "WALK"].includes(x.mode)) V.fail("INVALID_ARGUMENT");
     const l = V.location(x.loc, t);
-    V.match(d, l);
+    if (x.allowOutsidePilot !== undefined && typeof x.allowOutsidePilot !== "boolean") V.fail("INVALID_ARGUMENT");
+    const distanceToPilotM = V.pilotDistance(d, l);
+    if (distanceToPilotM > V.PARTICIPATION_RADIUS_M + 1e-6 && x.allowOutsidePilot !== true)
+      V.fail("OUTSIDE_PILOT", { participationRadiusM: V.PARTICIPATION_RADIUS_M, distanceToPilotM: Math.round(distanceToPilotM) });
     if (
       Object.values(d.sessions).some(
         (s) => s.uid === uid && ["ACTIVE", "PAUSED"].includes(s.status),

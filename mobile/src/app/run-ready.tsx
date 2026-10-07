@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AppState, BackHandler, View } from "react-native";
+import { Alert, AppState, BackHandler, View } from "react-native";
 import {
   useFocusEffect,
   useIsFocused,
@@ -10,6 +10,8 @@ import {
 import { usePreventRemove } from "expo-router/react-navigation";
 import { createPreparation, type PreparationState } from "../run-ready";
 import { preciseLoc } from "../location";
+import { call } from "../firebase";
+import { nearestPathDistance, OUTSIDE_START_WARNING, type PilotArea } from "../pilot-proximity";
 import { getUid } from "../session";
 import { getRun, startRun } from "../run";
 import { START_TEXT } from "../start";
@@ -37,7 +39,17 @@ export default function RunReady() {
       uid: getUid,
       now: Date.now,
       locate: preciseLoc,
-      start: (loc, uid) => startRun(mode, courseId, { loc, uid }),
+      outsidePilot: async (loc) => {
+        const pilot = await call<PilotArea>('getPilotData');
+        const distance = nearestPathDistance(loc, pilot.paths);
+        if (distance === null) throw new Error('PARTICIPATION_LOCATION_UNAVAILABLE');
+        return distance > (pilot.participationRadiusM ?? 100);
+      },
+      confirmOutside: () => new Promise<boolean>(resolve => Alert.alert('우이천 바깥에서 운동 시작', OUTSIDE_START_WARNING, [
+        { text: '취소', style: 'cancel', onPress: () => resolve(false) },
+        { text: '운동 시작', onPress: () => resolve(true) },
+      ], { cancelable: true, onDismiss: () => resolve(false) })),
+      start: (loc, uid, allowOutsidePilot) => startRun(mode, courseId, { loc, uid, allowOutsidePilot }),
       delay: () => new Promise<void>((r) => setTimeout(r, 1000)),
       changed: setState,
     }),
@@ -88,6 +100,7 @@ export default function RunReady() {
   };
   const busy =
     state.phase === "locating" ||
+    state.phase === "confirming" ||
     state.phase === "countdown" ||
     state.phase === "starting";
   return (
@@ -109,6 +122,8 @@ export default function RunReady() {
         <Txt w={700} s={22}>
           {state.phase === "locating"
             ? "현재 위치를 확인하고 있어요"
+            : state.phase === "confirming"
+              ? "시작 위치를 확인하고 있어요"
             : state.phase === "ready"
               ? "시작할 준비가 됐어요"
               : state.phase === "starting"
@@ -160,8 +175,8 @@ export default function RunReady() {
         onPress={close}
       />
       <Micro>
-        정확한 위치 권한이 필요해요. 우이천 파일럿 구간 밖에서는 서버가 시작을
-        제한할 수 있어요.
+        정확한 위치 권한이 필요해요. 우이천 산책로 100m 밖에서도 운동할 수 있어요.
+        제보·재확인은 100m 안으로 들어오면 활성화돼요.
       </Micro>
     </Screen>
   );

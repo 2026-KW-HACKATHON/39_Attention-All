@@ -135,7 +135,7 @@ cd C:\dev\39_Attention-All\mobile; $env:JAVA_HOME="C:\Program Files\Java\jdk-17"
 
 `npm run emulators`는 끌 때 데이터가 사라진다. 테스트 계정·제보를 이어 쓰려면 `npm run emulators:keep`(끌 때 `backend/.emulator-data`에 저장, 다음에 불러옴). 처음 실행할 때 폴더가 없으면 한 번 `npm run emulators`로 띄웠다가 다른 터미널에서 `npx firebase emulators:export ./.emulator-data --project demo-uirun`로 만든다. seed(`scripts/seed.js`)는 경로·코스·시설·정기 관찰만 바꾸고 제보·참여·운동 기록은 건드리지 않는다.
 
-에뮬레이터 위치를 파일럿 구간으로 옮기기(운동 시작·참여에 필요, 서버는 파일럿 경로 25m 안만 허용):
+에뮬레이터 위치를 우이천 경로로 옮기기(참여 기능은 등록 경로 100m 안에서 가능하며, 바깥에서는 제한 안내를 확인하고 운동만 시작할 수 있다):
 
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" emu geo fix 127.049923 37.624712

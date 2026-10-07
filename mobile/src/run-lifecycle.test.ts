@@ -13,7 +13,7 @@ function deferred() {
   return { promise, resolve };
 }
 
-function harness(options: { empty?: boolean; call?: (name: string) => Promise<unknown> } = {}) {
+function harness(options: { empty?: boolean; call?: (name: string) => Promise<unknown>; mutate?: (name: string, payload: Record<string, unknown>) => Promise<unknown> } = {}) {
   let running = true;
   const stopping = deferred(), stopped = deferred();
   const require = createRequire(import.meta.url);
@@ -44,7 +44,7 @@ function harness(options: { empty?: boolean; call?: (name: string) => Promise<un
     'expo-crypto': { randomUUID },
     'react-native': { Vibration: { vibrate: () => {} } },
     './firebase': { call: options.call ?? (async () => ({ ok: true })) },
-    './session': { getUid: () => uid, onAccountChange: () => {}, onBeforeSignOut: () => {}, refresh: async () => {}, mutate: async () => ({ ok: true }) },
+    './session': { getUid: () => uid, onAccountChange: () => {}, onBeforeSignOut: () => {}, refresh: async () => {}, mutate: options.mutate ?? (async () => ({ ok: true })) },
     './store': {
       fileExists: (n: string) => files.has(n),
       listJson: (prefix: string) => [...files.keys()].filter(n => n.startsWith(prefix)),
@@ -52,12 +52,12 @@ function harness(options: { empty?: boolean; call?: (name: string) => Promise<un
       writeJson: (n: string, value: unknown) => { files.set(n, structuredClone(value)); return true; },
       removeFile: (n: string) => files.delete(n),
     },
-    './location': {},
+    './location': { isLoc: (value: object) => !('ok' in value) },
     './run-ready': require('./run-ready.ts'),
     './core': require('./core.ts'),
     './runlogic': require('./runlogic.ts'),
   };
-  const mod = { exports: {} as Record<string, (...args: never[]) => unknown> };
+  const mod = { exports: {} as typeof import('./run') };
   const source = ts.transpileModule(readFileSync(new URL('./run.ts', import.meta.url), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
@@ -140,4 +140,17 @@ test('동시에 이어받은 응답은 먼저 복원한 운동의 일시정지�
   await old;
   assert.equal((h.run.getRun() as { status: string }).status, 'PAUSED');
   assert.equal(h.running(), false);
+});
+
+test('구간 밖 운동은 확인한 경우에만 서버 요청에 allowOutsidePilot을 보낸다', async () => {
+  for (const allowed of [false, true]) {
+    let payload: Record<string, unknown> | undefined;
+    const h = harness({ empty: true, mutate: async (_name, body) => {
+      payload = body;
+      return { ok: true, value: { sessionId: 'session', startedAt: Date.now() } };
+    } });
+    const result = await h.run.startRun('WALK', null, { uid: 'test-user', allowOutsidePilot: allowed, loc: { lat: 37.6, lng: 127, accuracyM: 5, measuredAt: Date.now(), precise: true } });
+    assert.equal(result.ok, true);
+    assert.equal(payload?.allowOutsidePilot, allowed ? true : undefined);
+  }
 });

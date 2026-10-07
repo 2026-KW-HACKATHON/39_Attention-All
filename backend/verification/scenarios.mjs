@@ -29,6 +29,16 @@ export async function verify({clients,jpeg,contracts,emit}) {
  await step('기록 상세·GPS·페이스',async()=>{const x=await call('user','getRunDetail',{sessionId:run.sessionId});assert(x.track.length===2&&x.metrics);return x});
  await step('타인 운동 기록 차단',()=>call('peer','getRunDetail',{sessionId:run.sessionId},'NOT_FOUND'))}
  const walk=await step('산책 시작',()=>call('user','startRun',{mode:'WALK',loc:loc()}));if(walk)await step('산책 취소',async()=>{const x=await call('user','discardRun',{sessionId:walk.sessionId});assert(x.status==='DISCARDED');return x});
+ const outsideLoc=()=>({...loc(37.6204),lng:127.056});
+ await step('100m 바깥 운동: 확인 없는 시작 차단',()=>call('user','startRun',{mode:'WALK',loc:outsideLoc()},'OUTSIDE_PILOT'));
+ const outsideRun=await step('100m 바깥 운동: 제한 확인 후 시작',()=>call('user','startRun',{mode:'WALK',loc:outsideLoc(),allowOutsidePilot:true}));
+ if(outsideRun){
+ await step('100m 바깥 운동 GPS 저장',()=>call('user','appendTrack',{sessionId:outsideRun.sessionId,points:[{lat:37.6204,lng:127.056,accuracyM:8,recordedAt:outsideRun.startedAt+1}]}));
+ await step('100m 바깥 사진 제보 준비 제한',()=>call('user','issueCaptureTicket',{purpose:'DISCOVERY',categoryCode:'LITTER',loc:outsideLoc()},'OUTSIDE_PILOT'));
+ await step('운동 중 100m 안 진입: 참여 활성화',()=>call('user','issueCaptureTicket',{purpose:'DISCOVERY',categoryCode:'LITTER',loc:{...loc(37.6204),lng:127.0509}}));
+ await step('운동 중 100m 바깥 재이탈: 참여 제한',()=>call('user','issueCaptureTicket',{purpose:'DISCOVERY',categoryCode:'LITTER',loc:outsideLoc()},'OUTSIDE_PILOT'));
+ await step('100m 바깥 운동 정상 종료',()=>call('user','finishRun',{sessionId:outsideRun.sessionId,expectedTrackCount:1}));
+ }
  for(const range of ['week','month','year'])await step('운동 집계 '+range,async()=>{const x=await call('user','getWorkoutStats',{range});assert(x.range===range&&x.timeZone==='Asia/Seoul'&&x.buckets.length==={week:7,month:30,year:12}[range]);return x});
  async function photo(role,purpose,lat,targetId){const t=await call(role,'issueCaptureTicket',{purpose,categoryCode:'LITTER',targetId,loc:loc(lat)});await call(role,'sealCapture',{ticketId:t.ticketId,loc:loc(lat)});await clients[role].upload(t.uploadPath,jpeg);for(let i=0;i<50;i++){const s=await call(role,'getPhotoStatus',{ticketId:t.ticketId});if(s.status==='READY')return t.ticketId;if(s.status==='FAILED')throw Error('Photo processing failed');await new Promise(r=>setTimeout(r,400))}throw Error('Photo readiness timeout')}
  const linked=await step('참여 연결 산책 시작',()=>call('user','startRun',{mode:'WALK',loc:loc()}));

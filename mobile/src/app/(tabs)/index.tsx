@@ -1,3 +1,5 @@
+import { useParticipationAccess } from '../../proximity';
+import { OUTSIDE_PARTICIPATION_TEXT } from '../../pilot-proximity';
 // 홈: 사진 + 날씨 + 운동 시작 패널(접힘/펼침). 웹 프로토타입 viewHome/viewHomeSimple과 같은 구성.
 // 실제 조회: getHome(코스), getWeather(날씨), 로그인 시 getMy(포인트·웰컴). 운동 시작은 준비 화면을 거쳐 서버 세션을 만든다.
 import { useCallback, useEffect, useState } from 'react';
@@ -202,6 +204,7 @@ const toBenefits = async (router: ReturnType<typeof useRouter>) => {
 };
 
 function DefaultHome() {
+  const access = useParticipationAccess();
   const router = useRouter();
   const { auth } = useSession();
   const inset = useSafeAreaInsets();
@@ -284,9 +287,9 @@ function DefaultHome() {
               <Seg label="운동 종류" value={mode} onChange={setMode} options={[['RUN', MODE_LABEL.RUN], ['WALK', MODE_LABEL.WALK]]} />
               <Btn kind="start" icon="play" label={st.live ? liveLabel(st.live) : MODE_LABEL[mode] + ' 시작'} busy={st.starting} onPress={() => void st.start(mode)} style={{ marginTop: 12 }} />
               <View style={{ flexDirection: 'row', marginTop: 4 }}>
-                <Pressable onPress={() => router.push('/report' as never)} accessibilityRole="button" style={{ flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <Pressable disabled={access.restricted} accessibilityState={{ disabled: access.restricted }} onPress={() => void access.open('/report')} accessibilityRole="button" style={{ flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <Icon name="flag" c={color.blue} />
-                  <Txt w={700}>환경 제보</Txt>
+                  <Txt w={700} c={access.restricted ? color.sub : color.black}>{access.restricted ? '제보 · 범위 밖' : '환경 제보'}</Txt>
                 </Pressable>
                 <View style={{ width: 1, backgroundColor: color.line, marginVertical: 12 }} />
                 <Pressable onPress={() => void toBenefits(router)} accessibilityRole="button" style={{ flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -320,6 +323,7 @@ function DefaultHome() {
 
 // 간편 화면 홈: 펼침 패널 없이 날씨·운동·제보·혜택이 바로 보이고 전체가 스크롤된다.
 function SimpleHome() {
+  const access = useParticipationAccess();
   const router = useRouter();
   const st = useStart();
   const inset = useSafeAreaInsets();
@@ -375,7 +379,7 @@ function SimpleHome() {
           </>
         )}
         <Rows style={{ marginTop: 6 }}>
-          <Row icon="flag" title="환경 제보" onPress={() => router.push('/report' as never)} />
+          <Row icon="flag" title="환경 제보" titleColor={access.restricted ? color.sub : undefined} sub={access.restricted ? OUTSIDE_PARTICIPATION_TEXT : undefined} onPress={access.restricted ? undefined : () => void access.open('/report')} />
           <Row icon="records" title="기록" onPress={() => router.navigate('/records')} />
           <Row
             icon="ticket"

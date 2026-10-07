@@ -40,6 +40,8 @@ function harness() {
     'expo-router': { useRouter: () => router, useNavigation: () => nav, useLocalSearchParams: () => ({}), useIsFocused: () => focused,
       useFocusEffect: (fn: () => () => void) => hooks.useEffect(fn, [fn, nav]) },
     'expo-router/react-navigation': { usePreventRemove: () => {} },
+    '../firebase': { call: async () => ({ paths: [], participationRadiusM: 100 }) },
+    '../pilot-proximity': require('./pilot-proximity.ts'),
     '../run-ready': require('./run-ready.ts'),
     '../location': { preciseLoc: () => { requests++; return locating; } },
     '../session': { getUid: () => 'user' }, '../run': { getRun: () => null, startRun: () => {} },

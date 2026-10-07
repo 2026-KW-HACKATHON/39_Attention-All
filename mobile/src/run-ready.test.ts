@@ -242,3 +242,49 @@ test("actual background while locating or counting down still cancels preparatio
   s.p.appStateChanged('background'); s.waits[0].resolve(); await start;
   assert.equal(s.starts(), 0);
 });
+
+test('outside warning cancellation creates no countdown or server session', async () => {
+  let starts = 0, delays = 0;
+  const p = createPreparation({ uid: () => 'a', now: () => 1000, locate: async () => loc(),
+    outsidePilot: async () => true, confirmOutside: async () => false,
+    start: async () => { starts++; return { ok: true as const, value: 1 }; },
+    delay: async () => { delays++; }, changed: () => {} });
+  await p.prepare(); await p.begin();
+  assert.equal(starts, 0); assert.equal(delays, 0); assert.equal(p.state.phase, 'ready');
+});
+
+test('outside approval after a long wait refreshes GPS before countdown and explicitly permits outside start', async () => {
+  let now = 1000, fixes = 0;
+  const starts: { measuredAt: number; allowed?: boolean }[] = [];
+  const p = createPreparation({ uid: () => 'a', now: () => now,
+    locate: async () => { fixes++; return loc(now); }, outsidePilot: async () => true,
+    confirmOutside: async () => { now = 61000; return true; },
+    start: async (position, _uid, allowed) => { starts.push({ measuredAt: position.measuredAt, allowed }); return { ok: true as const, value: 1 }; },
+    delay: async () => { now += 1000; }, changed: () => {} });
+  await p.prepare(); await p.begin();
+  assert.equal(fixes, 2); assert.deepEqual(starts, [{ measuredAt: 61000, allowed: true }]); assert.equal(p.state.phase, 'done');
+});
+
+test('inside start does not warn or send outside permission', async () => {
+  let warnings = 0, permitted: boolean | undefined;
+  const p = createPreparation({ uid: () => 'a', now: () => 1000, locate: async () => loc(),
+    outsidePilot: async () => false, confirmOutside: async () => { warnings++; return true; },
+    start: async (_position, _uid, allowed) => { permitted = allowed; return { ok: true as const, value: 1 }; },
+    delay: async () => {}, changed: () => {} });
+  await p.prepare(); await p.begin();
+  assert.equal(warnings, 0); assert.equal(permitted, false);
+});
+
+test('cancel or account change during outside confirmation cannot create a workout', async () => {
+  for (const changeAccount of [false, true]) {
+    const confirmation = deferred<boolean>(); let uid = 'a', starts = 0;
+    const p = createPreparation({ uid: () => uid, now: () => 1000, locate: async () => loc(),
+      outsidePilot: async () => true, confirmOutside: () => confirmation.promise,
+      start: async () => { starts++; return { ok: true as const, value: 1 }; }, delay: async () => {}, changed: () => {} });
+    await p.prepare(); const starting = p.begin(); await Promise.resolve(); await Promise.resolve();
+    if (changeAccount) uid = 'b'; else p.cancel();
+    confirmation.resolve(true); await starting;
+    assert.equal(starts, 0); assert.equal(p.state.phase, changeAccount ? 'error' : 'cancelled');
+    if (changeAccount) assert.equal(p.state.error, 'ACCOUNT_CHANGED');
+  }
+});

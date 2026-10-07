@@ -183,3 +183,32 @@ test("참여 기록 목록·운동 상세의 참여 행에 관찰 종류(categor
   const run = readModel(d, { uid: "u" }, "getRunDetail", { sessionId }, t0 + 2000).participations.items[0];
   assert.equal(run.categoryCode, "LITTER");
 });
+
+test('outside-pilot exercise requires confirmation but can record and finish without enabling reports', () => {
+  const d = db();
+  call(d, 'recordConsent', { version: 'v2-2026-10', accepted: true }, t0);
+  const outside = { ...loc(t0), lng: 127.055 };
+  assert.throws(() => call(d, 'startRun', { mode: 'WALK', loc: outside }, t0), /OUTSIDE_PILOT/);
+  assert.throws(() => call(d, 'startRun', { mode: 'WALK', loc: outside, allowOutsidePilot: 'true' }, t0), /INVALID_ARGUMENT/);
+  const { sessionId } = call(d, 'startRun', { mode: 'WALK', loc: outside, allowOutsidePilot: true }, t0);
+  call(d, 'appendTrack', { sessionId, points: [{ lat: outside.lat, lng: outside.lng, accuracyM: 5, recordedAt: t0 + 1000 }] }, t0 + 1000);
+  assert.throws(() => call(d, 'createIssue', { categoryCode: 'LITTER', modality: 'QUICK', pin: [outside.lat, outside.lng], loc: { ...outside, measuredAt: t0 + 2000 }, sessionId }, t0 + 2000), /OUTSIDE_PILOT/);
+  assert.throws(() => call(d, 'issueCaptureTicket', { purpose: 'DISCOVERY', categoryCode: 'LITTER', loc: { ...outside, measuredAt: t0 + 2000 } }, t0 + 2000), /OUTSIDE_PILOT/);
+  call(d, 'finishRun', { sessionId, expectedTrackCount: 1 }, t0 + 3000);
+  assert.equal(d.sessions[sessionId].status, 'COMPLETED');
+});
+
+test('participation radius is 100m and follows current location, not session starting position', () => {
+  const V = require('../src/validation');
+  const d = db();
+  const point = m => ({ ...loc(t0), lng: 127.05 + m / (111320 * Math.cos(37.62 * Math.PI / 180)) });
+  assert.equal(V.match(d, point(99.99)).id, 'L');
+  assert.throws(() => V.match(d, point(100.01)), /OUTSIDE_PILOT/);
+  call(d, 'recordConsent', { version: 'v2-2026-10', accepted: true }, t0);
+  const { sessionId } = call(d, 'startRun', { mode: 'WALK', loc: point(200), allowOutsidePilot: true }, t0);
+  const inside = { ...point(80), measuredAt: t0 + 1000 };
+  const result = call(d, 'createIssue', { categoryCode: 'LITTER', modality: 'QUICK', pin: [inside.lat, inside.lng], loc: inside, sessionId }, t0 + 1000);
+  assert.equal(result.ok, true);
+  const outside = { ...point(120), measuredAt: t0 + 2000 };
+  assert.throws(() => call(d, 'createIssue', { categoryCode: 'LITTER', modality: 'QUICK', pin: [outside.lat, outside.lng], loc: outside, sessionId }, t0 + 2000), /OUTSIDE_PILOT/);
+});
