@@ -883,3 +883,6 @@ html[data-ui="simple"] .tc-circle { width: 60px; height: 60px; margin-left: -30p
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 }
+
+/* 선택한 B 시안: 원본 로고를 유지하고 사진 상단 대비만 보완한다. */
+.home-photo::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 150px; background: linear-gradient(180deg, rgba(255,255,255,.68), rgba(255,255,255,.22) 65%, transparent); pointer-events: none; }

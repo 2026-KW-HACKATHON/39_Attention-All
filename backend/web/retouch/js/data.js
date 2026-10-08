@@ -14,10 +14,10 @@
   const SI = { credit: '서울연구원 서울연구데이터서비스', license: '공공누리 제1유형(출처표시)', base: 'https://data.si.re.kr/photo/' };
   const si = (src, id, place, date, size, use, pos) => ({ src, place, date, id, size, use, pos, credit: SI.credit, license: SI.license, url: SI.base + id }); // src는 단일 HTML 빌드가 찾을 수 있게 경로를 그대로 적는다
   const PHOTOS = {
-    // 홈 대표 사진: 팀이 전달한 사진(KakaoTalk_20261005_150749392_02.jpg, 387×516, EXIF 없음). 촬영자·촬영일·촬영 위치·이용 조건은 확인 전.
+    // 홈 대표 사진: 팀이 전달한 사진(photo_2026-10-09_00-17-42.jpg, 400×532, EXIF 없음). 촬영자·촬영일·촬영 위치·이용 조건은 확인 전.
     // 대표 이미지로만 쓰며 파일럿 코스의 출발점이나 지금 모습으로 표시하지 않는다. 이용 조건 확인 전이라 공유용 기록카드 배경으로는 쓰지 않는다.
-    hero: { src: 'assets/photos/home-hero.jpg', place: '하천 산책로 풍경', date: null, id: null, size: '387×516', use: '홈 대표 사진', pos: '50% 6%',
-      credit: '팀 제공 사진(전달 파일 KakaoTalk_20261005_150749392_02.jpg)', license: '이용 조건 확인 필요', note: '촬영자·촬영일·촬영 위치 미확인(파일에 촬영 정보 없음)', url: null },
+    hero: { src: 'assets/photos/home-hero.jpg', place: '하천 산책로 풍경', date: null, id: null, size: '400×532', use: '홈 대표 사진', pos: '50% 50%',
+      credit: '팀 제공 사진(전달 파일 photo_2026-10-09_00-17-42.jpg)', license: '이용 조건 확인 필요', note: '촬영자·촬영일·촬영 위치 미확인(파일에 촬영 정보 없음)', url: null },
     c1: si('assets/photos/uicheon-06C03527Bb80000.jpg', '06C03527Bb80000', '우이천 월계2교교차로 부근 산책로', '2020년 3월', '600×900', '우이천 왕복 3K 코스 분위기 사진', '50% 58%'),
     c2: si('assets/photos/uicheon-06C03532Bb80000.jpg', '06C03532Bb80000', '우이천 초안교 부근', '2020년 3월', '900×600', '광운로 다리 짧은 산책 코스 분위기 사진', '50% 60%'),
     river: si('assets/photos/uicheon-06C03536Bb80000.jpg', '06C03536Bb80000', '우이천 초안교 부근', '2020년 4월', '900×600', '우리 우이천 머리 사진'),

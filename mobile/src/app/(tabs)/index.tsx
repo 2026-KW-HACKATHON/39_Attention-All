@@ -247,6 +247,16 @@ function DefaultHome() {
         <>
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: photoH }}>
             <Cover photo={PHOTOS.hero} w={box.w} h={photoH} />
+            <Svg pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0 }} width={box.w} height={150}>
+              <Defs>
+                <LinearGradient id="homeLogoFade" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#fff" stopOpacity={0.68} />
+                  <Stop offset="0.65" stopColor="#fff" stopOpacity={0.22} />
+                  <Stop offset="1" stopColor="#fff" stopOpacity={0} />
+                </LinearGradient>
+              </Defs>
+              <Rect width={box.w} height={150} fill="url(#homeLogoFade)" />
+            </Svg>
             <Svg style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} width={box.w} height={44}>
               <Defs>
                 <LinearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
