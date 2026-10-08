@@ -115,3 +115,12 @@ test('첫 카메라 권한 창을 15초 열어 두어도 촬영 티켓은 권한
   assert.equal(!result.ok && result.errorCode, 'PHOTO_TOO_OLD');
   assert.equal(!result.ok && result.retryable, false);
 });
+
+test('선택 앱 안 셔터는 시스템 카메라 권한·실행을 건너뛰고 같은 티켓 취소 규칙을 쓴다', async () => {
+  const h = harness(); let permissions = 0, shutters = 0;
+  h.native.permission = async () => { permissions++; return { granted: true }; };
+  const result = await h.capture.capture('ROUTINE', 'routine', undefined, 'session', async () => { shutters++; return null; });
+  assert.equal(!result.ok && result.errorCode, 'CAPTURE_CANCELLED');
+  assert.equal(shutters, 1); assert.equal(permissions, 0);
+  assert.equal(h.requests[0]?.name, 'issueCaptureTicket');
+});

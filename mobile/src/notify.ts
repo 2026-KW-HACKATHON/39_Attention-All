@@ -7,7 +7,7 @@
 // - 알림 권한이 없으면 앱 안 알림 카드·진동만 쓴다(운동은 그대로).
 import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { getRun, subscribeRun, type Exposure } from './run';
+import { getRun, subscribeRun, wearHooks, type Exposure } from './run';
 import { getUid, onAccountChange } from './session';
 import { quickFromExposure, nearestM } from './exposure';
 import { call } from './firebase';
@@ -82,6 +82,8 @@ async function anchorsOf(ex: Exposure): Promise<[number, number][]> {
 
 async function show(ex: Exposure, sessionId: string, uid: string) {
   shown = ex.id; // 같은 요청을 두 번 알리지 않게 먼저 표시
+  if (wearHooks.claimAlert && await wearHooks.claimAlert(ex.id).catch(() => false)) return;
+  if (getUid() !== uid || getRun()?.exposure?.id !== ex.id || getRun()?.status !== 'ACTIVE' || Date.now() >= ex.expiresAt) return;
   if (!(await ensure())) return; // 권한 없음: 앱 안 알림만
   const r = getRun();
   const here = r?.last && Date.now() - r.last.measuredAt < 10000 && r.last.accuracyM <= 30 ? r.last : null;

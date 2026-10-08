@@ -19,7 +19,7 @@ import { Btn, LinkBtn, LoadState, Micro, Notice, Row, Rows, Screen, SecTitle, Tx
 type Kind = 'new' | 'quick' | 'recheck' | 'add' | 'routine';
 const PURPOSE: Record<Exclude<Kind, 'quick' | 'new'>, Purpose> = { recheck: 'RECHECK', add: 'DISCOVERY_PHOTO', routine: 'ROUTINE' };
 const TITLE: Record<Kind, string> = { new: '환경 제보', quick: '지금도 보여요', recheck: '사진으로 재확인', add: '내 제보 사진 보완', routine: '정기 관찰' };
-const LOCATION_TEXT: Record<string, string> = {
+export const LOCATION_TEXT: Record<string, string> = {
   LOCATION_PERMISSION_DENIED: '위치 권한이 없어 참여할 수 없어요. 설정에서 위치를 허용해 주세요.',
   PRECISE_LOCATION_REQUIRED: '정확한 위치가 필요해요. 위치 권한에서 ‘정확한 위치’를 켜 주세요.',
   GPS_ACCURACY_TOO_LOW: '위치 정확도가 낮아요(30m 초과). 하늘이 보이는 곳에서 다시 시도해 주세요.',

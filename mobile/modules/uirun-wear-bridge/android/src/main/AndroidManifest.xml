@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- 워치 명령 수신. JS가 살아 있으면 같은 운동 엔진으로 넘기고, 없으면 제한적으로 보관한 뒤 폰 확인 필요로 답한다. -->
+    <service
+      android:name="com.attentionall.uirun.wearbridge.WearListenerService"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+        <data android:scheme="wear" android:host="*" android:path="/uirun/v1/command" />
+      </intent-filter>
+    </service>
+  </application>
+</manifest>

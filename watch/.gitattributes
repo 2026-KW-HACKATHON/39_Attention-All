@@ -1,0 +1,3 @@
+# Windows 배치 파일은 CRLF로 체크아웃한다(Gradle wrapper 권장). 나머지는 저장소 루트 정책(LF)을 따른다.
+*.bat text eol=crlf
+*.jar binary

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
-import { Pressable, View } from 'react-native';
+import { AppState, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { wearForeground } from '../wear';
 import { CardPhotoRecovery } from '../card-photo-recovery';
 import { SessionProvider, useApi, useSession } from '../session';
 // 운동 위치 백그라운드 작업은 앱 시작 때 최상위에서 정의돼야 한다(TaskManager 요구사항).
@@ -40,6 +41,7 @@ function Gate() {
       <StoreBanner />
       <NotificationRouter />
       <CardPhotoRecovery />
+      <WearRouter />
     </Scale.Provider>
   );
 }
@@ -57,6 +59,19 @@ function ConsentPrompt({ settings }: { settings: Settings | undefined }) {
     asked.current.add(auth.uid);
     router.push('/consent');
   }, [auth, pathname, router, settings]);
+  return null;
+}
+
+// 인증 확인 뒤와 폰이 앞으로 돌아올 때 보관된 워치 요청을 기존 폰 흐름으로 이어간다.
+function WearRouter() {
+  const { auth } = useSession();
+  useEffect(() => {
+    if (auth.status !== 'init' && auth.status !== 'setup') wearForeground();
+  }, [auth.status, auth.uid]);
+  useEffect(() => {
+    const listener = AppState.addEventListener('change', state => { if (state === 'active') wearForeground(); });
+    return () => listener.remove();
+  }, []);
   return null;
 }
 
