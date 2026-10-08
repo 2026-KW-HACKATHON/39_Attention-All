@@ -206,7 +206,7 @@ private fun Checkpoint(ui: Ui, c: WatchController, f: Fonts) {
     val body = when {
         expired -> "응답 시간이 지났어요"
         !ex.answerable -> "${ex.radiusM}m 안에서 ‘아직 있어요’를 남길 수 있어요"
-        else -> "미선택 시 30초 뒤 운동 복귀"
+        else -> "미선택 시 15초 뒤 운동 복귀"
     }
     Face(f, small = "체크포인트" + (ex.distanceM?.let { " · ${it}m" } ?: ""), smallColor = Brand.lime, title = ex.title.ifEmpty { "체크포인트" }, body = body, notice = noticeText(ui.notice)) {
         Action("아직 있어요", f, enabled = ex.answerable && !expired) { c.answer("PRESENT") }

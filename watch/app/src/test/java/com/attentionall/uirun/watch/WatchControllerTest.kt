@@ -108,7 +108,7 @@ class WatchControllerTest {
     }
 
     @Test
-    fun w3_stays_for_30s_without_submitting() = runTest {
+    fun w3_stays_for_15s_without_submitting() = runTest {
         val (c, link) = setup()
         c.onSnapshot(snap(1, exposure = "ex1"))
         assertEquals(Screen.W3, c.ui.value.screen)

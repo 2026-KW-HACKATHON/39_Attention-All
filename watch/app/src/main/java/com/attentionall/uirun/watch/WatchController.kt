@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
-const val W3_TIMEOUT_MS = 30_000L // 체크포인트 알림 미선택 시 운동 화면 복귀(실제 타이머)
+const val W3_TIMEOUT_MS = 15_000L // 체크포인트 알림 미선택 시 운동 화면 복귀(실제 타이머)
 const val HOLD_TO_FINISH_MS = 1_200L
 internal const val ACK_RETRY_MS = 3_000L
 internal const val COMMAND_GIVE_UP_MS = 12_000L
@@ -53,7 +53,7 @@ private data class Pending(val id: String, val type: String, val json: String, v
  * 워치 화면 상태. 폰 스냅샷(권위) + 사용자가 연 화면(route)을 합쳐 지금 화면을 정한다.
  * - 오래된 스냅샷(epoch·revision이 작거나 같음)은 버린다. epoch가 바뀌면 이전 계정 상태를 모두 비운다.
  * - 상태 변경 명령은 연결됐을 때만 보내고, 같은 ID로 제한적으로 재전송한다. 화면은 ACK·스냅샷으로만 바뀐다.
- * - W3 타이머는 최초 표시 시각 기준 30초. 스냅샷 갱신·재구성으로 늘어나지 않고, 화면을 떠나면 취소된다. 시간이 다 되면 아무 응답도 보내지 않는다.
+ * - W3 타이머는 최초 표시 시각 기준 15초. 스냅샷 갱신·재구성으로 늘어나지 않고, 화면을 떠나면 취소된다. 시간이 다 되면 아무 응답도 보내지 않는다.
  */
 class WatchController(
     private val link: PhoneLink,
@@ -358,7 +358,7 @@ class WatchController(
         val a = alert ?: return
         if (route != Route.ALERT || quickId != null) return // 응답은 한 번만
         if (alertExpired()) {
-            notice = "EXPOSURE_EXPIRED" // 실제 노출이 먼저 만료되면 남은 30초와 관계없이 제출하지 않는다
+            notice = "EXPOSURE_EXPIRED" // 실제 노출이 먼저 만료되면 남은 15초와 관계없이 제출하지 않는다
             render()
             return
         }

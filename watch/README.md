@@ -145,7 +145,7 @@ watch/
   app/build.gradle.kts            버전·서명(폰 debug 키)·브랜드 자산 가져오기(mobile/assets → build/generated/brand)
   app/src/main/…/Protocol.kt      계약 v1 파싱·명령 만들기
   app/src/main/…/PhoneLink.kt     Data Layer 연결(capability·스냅샷·명령·ACK·RemoteActivityHelper)
-  app/src/main/…/WatchController.kt  화면 상태(스냅샷 + 사용자 경로), 명령 재시도, W3 30초, 보간
+  app/src/main/…/WatchController.kt  화면 상태(스냅샷 + 사용자 경로), 명령 재시도, W3 15초, 보간
   app/src/main/…/AlertBook.kt     같은 체크포인트 한 번만(화면·알림)
   app/src/main/…/PhoneDataService.kt 앱 화면이 없을 때 새 체크포인트 알림 + ALERT_SHOWN
   app/src/main/…/ui/              Theme(브랜드 색·글꼴)·Screens(W0~W7-B, E1~E3, P1)
