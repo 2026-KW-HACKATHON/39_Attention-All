@@ -243,6 +243,48 @@ class WatchControllerTest {
     }
 
     @Test
+    fun fresh_snapshot_clears_timeout_notice_but_stale_state_and_hello_do_not() = runTest {
+        val (c, _) = setup()
+        c.onSnapshot(snap(1))
+        c.pause()
+        runCurrent()
+        advanceTimeBy(COMMAND_GIVE_UP_MS + ACK_RETRY_MS)
+        runCurrent()
+        assertEquals("NO_RESPONSE", c.ui.value.notice)
+        c.onAck(ack("hello-recovered", "DONE", jsReady = true))
+        assertEquals("응답만으로는 조작 결과를 확정하지 않는다", "NO_RESPONSE", c.ui.value.notice)
+        c.onSnapshot(snap(1))
+        assertEquals("NO_RESPONSE", c.ui.value.notice)
+        c.onSnapshot(snap(2, status = "PAUSED"))
+        assertNull(c.ui.value.notice)
+        assertEquals(Screen.W6, c.ui.value.screen)
+    }
+
+    @Test
+    fun connection_recovery_keeps_the_server_rejection_reason() = runTest {
+        val (c, link) = setup()
+        c.onSnapshot(snap(1, status = null))
+        c.choose()
+        c.start("RUN")
+        runCurrent()
+        c.onAck(ack(link.sentOf("START").single().getString("id"), "REJECTED", "PILOT_NOT_CONFIGURED"))
+        c.onSnapshot(snap(2, status = null))
+        assertEquals("PILOT_NOT_CONFIGURED", c.ui.value.notice)
+    }
+
+    @Test
+    fun home_dismisses_completed_run_without_opening_the_phone() = runTest {
+        val (c, link) = setup()
+        c.onSnapshot(snap(1, status = "ENDED", result = true))
+        assertEquals(Screen.W7B, c.ui.value.screen)
+        c.home()
+        assertEquals(Screen.W0, c.ui.value.screen)
+        assertTrue(link.opened.isEmpty())
+        c.onSnapshot(snap(2, status = "ENDED", result = true))
+        assertEquals(Screen.W0, c.ui.value.screen)
+    }
+
+    @Test
     fun disconnected_shows_e1_freezes_time_and_sends_no_commands() = runTest {
         val (c, link) = setup()
         c.onSnapshot(snap(1, status = "ACTIVE", activeMs = 60_000))

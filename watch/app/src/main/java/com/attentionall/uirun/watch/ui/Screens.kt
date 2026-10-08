@@ -265,6 +265,7 @@ private fun Summary(c: WatchController, f: Fonts) {
         },
     ) {
         Action("폰에서 결과 보기", f) { c.openResult() }
+        Action("처음으로", f, secondary = true) { c.home() }
     }
 }
 
@@ -319,7 +320,7 @@ private fun problemText(p: String?) = when (p) {
 fun noticeText(code: String?) = when (code) {
     null -> null
     "NOT_CONNECTED", "SEND_FAILED" -> "폰과 연결되지 않았어요"
-    "NO_RESPONSE" -> "폰 응답이 없어요. 상태를 다시 받았어요"
+    "NO_RESPONSE" -> "폰 응답을 확인하지 못했어요. 연결 상태를 확인해주세요"
     "PHONE_FOREGROUND_REQUIRED" -> "폰에서 우이런을 열어 시작해주세요"
     "PHONE_APP_NOT_RUNNING" -> "폰에서 우이런을 열어주세요"
     "UNAUTHENTICATED", "LOGIN_REQUIRED" -> "폰에서 로그인해주세요"

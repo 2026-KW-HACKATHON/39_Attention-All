@@ -174,6 +174,9 @@ class WatchController(
         snap = s
         rxAt = clock()
         rxWall = wall()
+        // 최신 폰 상태를 실제로 받았을 때만 이전 통신 실패 안내를 지운다.
+        // 서버가 거절한 명령의 이유는 연결 회복만으로 없애지 않는다.
+        if (notice in setOf("NO_RESPONSE", "SEND_FAILED", "NOT_CONNECTED")) notice = null
         settlePending()
         trackPhoto()
         alert?.let { a -> s.exposure?.takeIf { it.id == a.exposure.id }?.let { alert = a.copy(exposure = it) } } // 거리·응답 가능만 갱신, deadline 유지
