@@ -36,13 +36,13 @@ const config: ExpoConfig = {
   name: '우이런',
   slug: 'uirun',
   scheme: 'uirun',
-  version: '0.1.4',
+  version: '0.1.5',
   orientation: 'portrait',
   icon: './assets/brand/app-icon.png',
   userInterfaceStyle: 'light',
   android: {
     package: APPLICATION_ID,
-    versionCode: 5,
+    versionCode: 6,
     ...(hasGoogleServices ? { googleServicesFile: './google-services.json' } : {}),
     ...(mapsKey ? { config: { googleMaps: { apiKey: mapsKey } } } : {}),
     adaptiveIcon: { foregroundImage: './assets/brand/adaptive-foreground.png', backgroundColor: '#FFFFFF' },
@@ -56,6 +56,7 @@ const config: ExpoConfig = {
     ['expo-location', { isAndroidForegroundServiceEnabled: true, isAndroidBackgroundLocationEnabled: false, locationWhenInUsePermission: '운동 경로 기록과 현장 참여 위치 확인에 정확한 위치를 써요.' }],
     // 현장 사진은 카메라 촬영만 받는다. 사진 기록카드의 ‘앨범에서 선택’은 Android 사진 선택기(권한 없음)를 쓰고 서버로 보내지 않는다.
     ['expo-image-picker', { cameraPermission: '환경 제보·재확인 사진을 현장에서 촬영하고, 사진 기록카드 배경을 찍어요.', photosPermission: false, microphonePermission: false }],
+    ['expo-camera', { cameraPermission: '워치에서 요청한 현장 사진을 촬영해요.', recordAudioAndroid: false, barcodeScannerEnabled: false }],
     // 사진 기록카드 저장만 한다(사진 읽기 권한 없음). Android 13+는 저장에 권한이 필요 없다.
     ['expo-media-library', { savePhotosPermission: '사진 기록카드를 사진 앱에 저장해요.', isAccessMediaLocationEnabled: false, granularPermissions: [] }],
     'expo-sharing',

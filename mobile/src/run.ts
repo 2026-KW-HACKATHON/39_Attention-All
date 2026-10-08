@@ -57,6 +57,7 @@ const fileName = (r: { uid: string; sessionId: string }) => `run-${r.uid}-${r.se
 const newId = () => Crypto.randomUUID();
 let state: Run | null = null;
 let loadedFor: string | null | undefined;
+export const wearHooks: { claimAlert?: (exposureId: string) => Promise<boolean> } = {};
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach(f => f());
 export const subscribeRun = (f: () => void) => {
@@ -189,7 +190,19 @@ async function stopUpdatesNow() {
 }
 
 // 시작: 정확한 위치 확인 → 서버 세션 생성. 서버 세션이 없으면 시작으로 표시하지 않는다(오프라인 시작 불가).
-export async function startRun(mode: 'RUN' | 'WALK', courseId: string | null, prepared?: { loc: Loc; uid: string; allowOutsidePilot?: boolean }): Promise<Result<Run>> {
+type PreparedRun = { loc: Loc; uid: string; allowOutsidePilot?: boolean };
+const starts = new Map<string, Promise<Result<Run>>>();
+export function startRun(mode: 'RUN' | 'WALK', courseId: string | null, prepared?: PreparedRun): Promise<Result<Run>> {
+  const uid = getUid();
+  if (!uid) return Promise.resolve(fail('UNAUTHENTICATED'));
+  if (prepared && prepared.uid !== uid) return Promise.resolve(fail('ACCOUNT_CHANGED'));
+  const pending = starts.get(uid);
+  if (pending) return pending;
+  const work = startRunNow(mode, courseId, prepared).finally(() => { if (starts.get(uid) === work) starts.delete(uid); });
+  starts.set(uid, work);
+  return work;
+}
+async function startRunNow(mode: 'RUN' | 'WALK', courseId: string | null, prepared?: PreparedRun): Promise<Result<Run>> {
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
   const existing = getRun();
@@ -532,6 +545,8 @@ async function checkExposure() {
     if (v.ok && v.exposure && cur?.sessionId === r.sessionId && cur.status === 'ACTIVE') {
       cur.exposure = v.exposure;
       put(cur);
+      if (wearHooks.claimAlert && await wearHooks.claimAlert(v.exposure.id).catch(() => false)) return;
+      if (getUid() !== r.uid || getRun()?.exposure?.id !== v.exposure.id || getRun()?.status !== 'ACTIVE') return;
       Vibration.vibrate(r.mode === 'RUN' ? 150 : [0, 150, 120, 150]);
     }
   } catch {

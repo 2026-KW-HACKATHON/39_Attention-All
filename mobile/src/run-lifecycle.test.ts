@@ -154,3 +154,16 @@ test('구간 밖 운동은 확인한 경우에만 서버 요청에 allowOutsideP
     assert.equal(payload?.allowOutsidePilot, allowed ? true : undefined);
   }
 });
+
+test('폰과 워치가 동시에 시작해도 한 요청과 같은 세션을 사용하며 prepared 동의·위치를 보존한다', async () => {
+  const gate = deferred(); let starts = 0, payload: Record<string, unknown> | undefined;
+  const h = harness({ empty: true, mutate: async (_name, data) => { starts++; payload = data; await gate.promise; return { ok: true, value: { sessionId: 'single', startedAt: Date.now() } }; } });
+  const loc = { lat: 37.6, lng: 127, accuracyM: 5, measuredAt: Date.now(), precise: true as const };
+  const first = h.run.startRun('WALK', null, { uid: 'test-user', loc, allowOutsidePilot: true });
+  const second = h.run.startRun('RUN', null, { uid: 'test-user', loc });
+  await Promise.resolve(); assert.equal(starts, 1);
+  gate.resolve();
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(a.ok && a.value.sessionId, 'single'); assert.equal(b.ok && b.value.sessionId, 'single');
+  assert.equal(payload?.allowOutsidePilot, true); assert.equal(payload?.mode, 'WALK');
+});

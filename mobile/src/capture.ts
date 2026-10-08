@@ -106,16 +106,18 @@ function keep(job: PhotoJob, uri: string): Result<PhotoJob> {
 }
 
 // 1) 티켓 발급 → 2) 카메라 → 3) 사진 보관 → 4) 봉인
-export async function capture(purpose: Purpose, targetId?: string, categoryCode?: string, sessionId?: string): Promise<Result<PhotoJob>> {
+export async function capture(purpose: Purpose, targetId?: string, categoryCode?: string, sessionId?: string, shoot?: () => Promise<string | null>): Promise<Result<PhotoJob>> {
   const uid = getUid();
   if (!uid) return fail('UNAUTHENTICATED');
   // 참여 범위는 카메라 권한 창·촬영보다 먼저 확인한다.
   const beforeCamera = await participationLoc();
   if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
   if (!isLoc(beforeCamera)) return beforeCamera;
-  const cam = await ImagePicker.requestCameraPermissionsAsync();
-  if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
-  if (!cam.granted) return fail('CAMERA_PERMISSION_DENIED');
+  if (!shoot) {
+    const cam = await ImagePicker.requestCameraPermissionsAsync();
+    if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
+    if (!cam.granted) return fail('CAMERA_PERMISSION_DENIED');
+  }
   // 최초 권한 창에서 시간이 지났거나 이동했을 수 있어 티켓 발급 직전에 다시 잰다.
   const loc = await participationLoc();
   if (getUid() !== uid) return fail('ACCOUNT_CHANGED');
@@ -130,12 +132,19 @@ export async function capture(purpose: Purpose, targetId?: string, categoryCode?
   if (!mine(job)) return fail('ACCOUNT_CHANGED');
   Object.assign(job, { ticketId: t.value.ticketId, uploadPath: t.value.uploadPath, expiresAt: t.value.expiresAt });
   save(job); // 카메라가 열린 동안 앱이 정리돼도 이 티켓으로 이어간다(resumeShot)
-  const shot = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.6, exif: false });
-  if (shot.canceled || !shot.assets[0]) {
+  let uri: string | null;
+  if (shoot) {
+    try { uri = await shoot(); }
+    catch { return fail('CAMERA_ERROR', true); }
+  } else {
+    const shot = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.6, exif: false });
+    uri = shot.canceled ? null : shot.assets[0]?.uri ?? null;
+  }
+  if (!uri) {
     finishJob(job);
     return fail('CAPTURE_CANCELLED');
   }
-  const k = keep(job, shot.assets[0].uri);
+  const k = keep(job, uri);
   if (!k.ok) {
     finishJob(job);
     return k;
