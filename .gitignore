@@ -38,3 +38,6 @@ service-account*.json
 *.pem
 *.p12
 *.key
+
+# Firebase local secret overrides
+.secret.local

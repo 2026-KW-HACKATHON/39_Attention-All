@@ -303,4 +303,4 @@ getMy 추가 `participationStats:{total,report,recheck,routine,recheckPhoto,rech
 
 ## 관리자 대시보드
 
-`getAdminDashboard`는 관리자 인증 후 호출하며 제보·사진·쿠폰 통계 및 목록을 반환합니다. `limit`, `table`(issues/photos/coupons), `cursor`로 각 목록을 조회합니다. `adminLogin`은 아이디·비밀번호를 확인하고 관리자 custom token을 반환하는 별도 로그인 API입니다. 서버 환경변수 `UIRUN_ADMIN_ID`, `UIRUN_ADMIN_PASSWORD`를 설정해야 하며, 미설정 시 로그인을 허용하지 않습니다. 운영 환경변수 파일은 Git에 포함하지 않습니다.
+`getAdminDashboard`는 관리자 인증 후 호출하며 제보·사진·쿠폰 통계 및 목록을 반환합니다. `limit`, `table`(issues/photos/coupons), `cursor`로 각 목록을 조회합니다. `adminLogin`은 아이디·비밀번호를 확인하고 관리자 custom token을 반환하는 별도 로그인 API입니다. Firebase Secret Manager 시크릿 `UIRUN_ADMIN_ID`, `UIRUN_ADMIN_PASSWORD`를 설정하고 `adminLogin` 함수를 배포해야 하며, 미설정 시 로그인을 허용하지 않습니다. 운영 환경변수 파일은 Git에 포함하지 않습니다.

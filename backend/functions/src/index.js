@@ -320,8 +320,11 @@ exports.getPhotoStatus = onCall(options, async (req) => {
   }
 });
 
-// This pilot uses the single operator account requested by the team.
-exports.adminLogin = onCall({...options, enforceAppCheck:false}, async req=>{
+// Credentials are supplied only to this function from Firebase Secret Manager.
+const { defineSecret } = require('firebase-functions/params');
+const adminId = defineSecret('UIRUN_ADMIN_ID');
+const adminPassword = defineSecret('UIRUN_ADMIN_PASSWORD');
+exports.adminLogin = onCall({...options, enforceAppCheck:false, secrets:[adminId, adminPassword]}, async req=>{
   const {validAdminCredentials}=require('./admin-login');
   const {createHash}=require('node:crypto');
   const f=require('firebase-admin/firestore').getFirestore();
