@@ -33,6 +33,11 @@ export function mapRegion(points: LatLng[], pad = 1.35): Region {
     longitudeDelta: Math.max(0.002, (maxO - minO) * pad),
   };
 }
+// 코스가 기존 구간에만 있어도 서버의 전체 참여 경로를 먼저 보여준다.
+export function pilotMapRegion(paths: LatLng[][], courses: LatLng[][]): Region {
+  const points = paths.flat().filter(valid);
+  return mapRegion(points.length ? points : courses.flat());
+}
 export function routeSegments(
   track: { lat: number; lng: number; segment: number }[],
 ): LatLng[][] {

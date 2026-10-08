@@ -87,3 +87,14 @@ test("direction follows known outbound coordinate order; duplicate and empty pat
     90,
   );
 });
+
+test('pilot viewport contains Wolgye2 even when the first course remains in Wolgye1', async () => {
+  const { pilotMapRegion } = await import('./map-display.ts');
+  const south: [number, number][] = [[37.615,127.064],[37.624,127.05]];
+  const north: [number, number][] = [[37.6312,127.0416],[37.624,127.05]];
+  const r = pilotMapRegion([south,north],[south]);
+  assert.ok(r.latitude+r.latitudeDelta/2 >= north[0][0]);
+  assert.ok(r.latitude-r.latitudeDelta/2 <= south[0][0]);
+  assert.deepEqual(pilotMapRegion([], [south]), mapRegion(south));
+  assert.deepEqual(pilotMapRegion([], []), mapRegion([]));
+});
