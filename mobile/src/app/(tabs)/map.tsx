@@ -15,8 +15,8 @@ import { useApi } from '../../session';
 import { usePaged } from '../../paged';
 import { useStart } from '../../start';
 import { ObservationGuide } from '../../observation-guide';
-import { hasMapsKey, region } from '../../routemap';
-import { clusterPins, directionArrows, type Region } from '../../map-display';
+import { hasMapsKey } from '../../routemap';
+import { clusterPins, directionArrows, pilotMapRegion, type Region } from '../../map-display';
 import { nearestM } from '../../exposure';
 import { distM } from '../../runlogic';
 import { issueCurrent, linePath, projector, type Category, type Course, type Facility, type Issue, type LatLng, type MapData, type Routine } from '../../core';
@@ -183,12 +183,11 @@ function FullMap({ onBack }: { onBack?: () => void }) {
       </View>
     );
 
-  const first = x.courses[0]?.pts ?? x.paths.flatMap(p => p.points);
-  const initial = region(first);
+  const initial = pilotMapRegion(x.paths.map(p => p.points), x.courses.map(c => c.pts));
   const clusters = clusterPins(pins, viewport ?? initial, mapSize.width, mapSize.height);
   return (
     <View style={{ flex: 1 }}>
-      <MapView ref={mapRef} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={initial} onRegionChangeComplete={setViewport} onLayout={e => setMapSize(e.nativeEvent.layout)} showsUserLocation={!!here} showsMyLocationButton={false} toolbarEnabled={false} onPress={() => setSel(null)}>
+      <MapView key={JSON.stringify(initial)} ref={mapRef} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={initial} onRegionChangeComplete={setViewport} onLayout={e => setMapSize(e.nativeEvent.layout)} showsUserLocation={!!here} showsMyLocationButton={false} toolbarEnabled={false} onPress={() => setSel(null)}>
         {x.paths.map((p, i) => <Polyline key={'w' + i} coordinates={p.points.map(ll)} strokeColor="rgba(216,230,243,0.9)" strokeWidth={14} />)}
         {showC
           ? x.courses.map(c => {
