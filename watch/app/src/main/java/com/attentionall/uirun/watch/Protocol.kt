@@ -47,6 +47,7 @@ data class Quick(val commandId: String, val exposureId: String, val answer: Stri
 
 // stage: PHONE_RECEIVED | CAMERA_OPENED | CAMERA_PERMISSION | SUBMITTED | SERVER_RESULT | CANCELLED | FAILED | EXPIRED
 data class Photo(val requestId: String, val exposureId: String, val stage: String, val code: String?, val reward: Reward?)
+data class Preparation(val phase: String, val count: Int, val outside: Boolean, val error: String?, val mode: String)
 
 data class Snapshot(
     val v: Int,
@@ -59,6 +60,7 @@ data class Snapshot(
     val quick: Quick?,
     val photo: Photo?,
     val last: Summary?, // 마지막 종료 요약(서버 확인분)
+    val preparation: Preparation? = null,
 ) {
     companion object {
         fun parse(json: String): Snapshot? = runCatching {
@@ -79,6 +81,9 @@ data class Snapshot(
                     Photo(it.getString("requestId"), it.getString("exposureId"), it.getString("stage"), it.str("code"), it.optJSONObject("reward")?.let(::reward))
                 },
                 last = o.optJSONObject("last")?.let(::summary),
+                preparation = o.optJSONObject("preparation")?.let {
+                    Preparation(it.getString("phase"), it.optInt("count"), it.optBoolean("outside"), it.str("error"), it.optString("mode", "RUN"))
+                },
             )
         }.getOrNull()
 

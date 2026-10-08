@@ -319,3 +319,20 @@ exports.getPhotoStatus = onCall(options, async (req) => {
     throw error(e);
   }
 });
+
+// This pilot uses the single operator account requested by the team.
+exports.adminLogin = onCall({...options, enforceAppCheck:false}, async req=>{
+  const {validAdminCredentials}=require('./admin-login');
+  const {createHash}=require('node:crypto');
+  const f=require('firebase-admin/firestore').getFirestore();
+  const key=createHash('sha256').update(req.rawRequest.ip||'unknown').digest('hex');
+  const attempt=f.doc('adminLoginAttempts/'+key), now=Date.now();
+  await f.runTransaction(async tx=>{
+    const old=(await tx.get(attempt)).data();
+    const count=old&&now-old.startedAt<60000?old.count:0;
+    if(count>=10)throw new HttpsError('resource-exhausted','잠시 후 다시 로그인해주세요.');
+    tx.set(attempt,{count:count+1,startedAt:count?old.startedAt:now});
+  });
+  if(!validAdminCredentials(req.data))throw new HttpsError('unauthenticated','아이디 또는 비밀번호가 올바르지 않습니다.');
+  return {token:await getAuth().createCustomToken('uirun-fixed-admin',{admin:true})};
+});

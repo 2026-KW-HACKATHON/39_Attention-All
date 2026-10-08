@@ -1,0 +1,1 @@
+exports.validAdminCredentials = x => !!x && !!process.env.UIRUN_ADMIN_ID && !!process.env.UIRUN_ADMIN_PASSWORD && x.id === process.env.UIRUN_ADMIN_ID && x.password === process.env.UIRUN_ADMIN_PASSWORD;

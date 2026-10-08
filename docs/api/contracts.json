@@ -130,6 +130,15 @@
       "details": "FRONTEND.md"
     },
     {
+      "name": "getAdminDashboard",
+      "kind": "read",
+      "auth": "admin",
+      "appCheckRequired": true,
+      "consentRequired": false,
+      "required": [],
+      "details": "FRONTEND.md"
+    },
+    {
       "name": "getAdminQueue",
       "kind": "read",
       "auth": "admin",

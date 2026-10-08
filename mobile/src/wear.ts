@@ -62,6 +62,11 @@ let watchSeenAt = 0; // 워치 화면이 보인다고 마지막으로 알린 시
 let needs: string[] = [];
 let needsAt = 0;
 let startRequest: { c: Command; nodeId: string | null; uid: string; epoch: number; at: number } | null = null;
+let preparation: import('./wearlogic').SnapshotInput['preparation'] = null;
+export function setWearPreparation(value: typeof preparation) {
+  preparation = value;
+  void publish(true);
+}
 let pending: { c: Command; nodeId: string | null; at: number } | null = null; // 폰이 앞에 없을 때 받은 시작·재개
 const inflight = new Set<string>();
 const claims = new Map<string, Promise<boolean>>();
@@ -79,6 +84,7 @@ function syncAccount(uid: string | null) {
   needsAt = 0;
   pending = null;
   startRequest = null;
+  preparation = null;
   claims.clear();
   infoLoading.clear();
   resumed.clear();
@@ -172,6 +178,7 @@ function snapshot() {
       photo: photoView(s.handoff),
       last: s.last,
       participations: r && s.last?.sessionId === r.sessionId ? s.last.participations : null,
+      preparation,
     },
     now,
   );
@@ -326,6 +333,13 @@ function confirmPending() {
   pending = null;
   if (!p || Date.now() - p.at > START_PENDING_MS || !foreground() || locked()) return;
   const start = p.c.type === 'START';
+  if (start) {
+    const r = getRun();
+    const bad = check(p.c, { epoch, uid: getUid(), run: r && { sessionId: r.sessionId, status: r.status } });
+    if (bad) return settle(p.c, p.nodeId, bad);
+    void handle(p.c, p.nodeId);
+    return;
+  }
   const what = start ? `${p.c.mode === 'WALK' ? '산책' : '달리기'} 시작` : '운동 재개';
   Alert.alert('워치 요청', `워치에서 ${what}을 요청했어요. 지금 할까요?`, [
     { text: '취소', style: 'cancel', onPress: () => settle(p.c, p.nodeId, ack(p.c.id, 'REJECTED', { code: 'CANCELLED_ON_PHONE' })) },

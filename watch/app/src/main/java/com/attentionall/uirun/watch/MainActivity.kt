@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.VibratorManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -21,7 +23,11 @@ import com.attentionall.uirun.watch.ui.WatchApp
 class WatchViewModel(app: Application, scenario: String?) : AndroidViewModel(app) {
     // 개발 빌드에서만 ?demo 시나리오로 DEMO 데이터를 쓸 수 있다(Links는 src/debug·src/release에 따로 있다).
     private val link = Links.create(app, viewModelScope, scenario)
-    val controller = WatchController(link, viewModelScope, SystemClock::elapsedRealtime, book = PrefsAlertBook.get(app)).also {
+    val controller = WatchController(link, viewModelScope, SystemClock::elapsedRealtime, book = PrefsAlertBook.get(app), onAlert = {
+        val vibrator = if (Build.VERSION.SDK_INT >= 31) app.getSystemService(VibratorManager::class.java).defaultVibrator
+            else app.getSystemService(android.os.Vibrator::class.java)
+        vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 150, 120, 150), -1))
+    }).also {
         it.start()
         Links.script(it, viewModelScope, scenario)
     }

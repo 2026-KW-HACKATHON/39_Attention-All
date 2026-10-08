@@ -48,7 +48,7 @@
     "prebuild": "expo prebuild --platform android --clean",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/core.test.ts src/firebase-build.test.ts src/runlogic.test.ts src/flows.test.ts src/run-lifecycle.test.ts src/capture-account.test.ts src/store-recovery.test.ts src/run-ready.test.ts src/pilot-proximity.test.ts src/pilot-access.test.ts src/proximity-hook.test.ts src/card-photo.test.ts src/card-photo-screen.test.ts src/run-ready-screen.test.ts src/location-permission.test.ts src/map-display.test.ts src/routine-view.test.ts src/wearlogic.test.ts src/wear-runtime.test.ts src/wear-capture-screen.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/core.test.ts src/firebase-build.test.ts src/runlogic.test.ts src/flows.test.ts src/run-lifecycle.test.ts src/capture-account.test.ts src/store-recovery.test.ts src/run-ready.test.ts src/pilot-proximity.test.ts src/pilot-access.test.ts src/proximity-hook.test.ts src/card-photo.test.ts src/card-photo-screen.test.ts src/run-ready-screen.test.ts src/location-permission.test.ts src/map-display.test.ts src/facilities.test.ts src/routine-view.test.ts src/wearlogic.test.ts src/wear-runtime.test.ts src/wear-capture-screen.test.ts",
     "doctor": "expo-doctor"
   },
   "private": true

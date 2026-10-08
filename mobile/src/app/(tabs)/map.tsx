@@ -1,3 +1,4 @@
+import { facilityIcon, visibleFacilities } from '../../facilities';
 import { useParticipationAccess } from '../../proximity';
 // 지도(웹 프로토타입 지도 탭): 전체·코스·관찰·시설 보기. 관찰은 서버 페이지를 끝까지 이어 받는다(50건 넘어도 빠지지 않게).
 // 관찰 보기에서만 ‘지난 기록 포함’(회색 핀). 내 위치 버튼은 권한을 받은 뒤 카메라를 내 위치로 옮긴다.
@@ -38,7 +39,7 @@ const ago = (t: number, now: number) => {
 const fmtDist = (m: number) => (m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`);
 
 // 지도·목록이 함께 쓰는 항목(서버 자료만)
-function useItems(old: boolean) {
+function useItems(old: boolean, allFacilities: boolean) {
   const map = useApi<MapData & { pilot?: { paths?: { points: LatLng[] }[] } }>('getMapData', { limit: 1 });
   const iss = usePaged<Issue>('getMapData', 'issues', 'cursor', { limit: 50 }, false, true);
   const pilot = useApi<{ categories: Record<string, Category> }>('getPilotData');
@@ -57,7 +58,7 @@ function useItems(old: boolean) {
   });
   const issues = allIssues.filter(i => old || !i.old);
   const routines: Item[] = (d?.routines ?? []).filter((r: Routine) => r.enabled && r.anchors.length).map(r => ({ key: 'routine:' + r.id, kind: 'routine', id: r.id, icon: 'repeat', title: '정기 관찰 · ' + r.name, meta: `${r.roundHours}시간마다 같은 구도로 남기는 지점`, at: r.anchors[0], pts: r.anchors }));
-  const facs: Item[] = (d?.facilities ?? []).map((f: Facility) => ({ key: 'fac:' + f.id, kind: 'fac', id: f.id, icon: f.type === 'toilets' ? 'wc' : 'bike', title: f.name, meta: '현장 확인 전 위치(OSM 등록)', at: [f.lat, f.lng], pts: [[f.lat, f.lng]] }));
+  const facs: Item[] = visibleFacilities(d?.facilities ?? [], allFacilities).map((f: Facility) => ({ key: 'fac:' + f.id, kind: 'fac', id: f.id, icon: facilityIcon(f.type), title: f.name, meta: '현장 조사 · 네이버 저장 위치', at: [f.lat, f.lng], pts: [[f.lat, f.lng]] }));
   return { map, iss, courses, issues, hasOld: allIssues.some(i => i.old), routines, facs, paths: d?.pilot?.paths ?? [] };
 }
 
@@ -89,7 +90,8 @@ function FullMap({ onBack }: { onBack?: () => void }) {
   const [viewport, setViewport] = useState<Region | null>(null);
   const [mapSize, setMapSize] = useState({ width: 0, height: 0 });
   const mapRef = useRef<MapView>(null);
-  const x = useItems(mode === 'issue' && old);
+  const [allFacilities, setAllFacilities] = useState(false);
+  const x = useItems(mode === 'issue' && old, allFacilities);
   const showC = mode === 'all' || mode === 'course', showI = mode === 'all' || mode === 'issue', showF = mode === 'all' || mode === 'fac';
   const pins = [...(showI ? [...x.issues, ...x.routines] : []), ...(showF ? x.facs : [])];
   const all = [...x.courses, ...pins];
@@ -138,6 +140,7 @@ function FullMap({ onBack }: { onBack?: () => void }) {
             </Pressable>
           ))}
         </View>
+        {mode === 'all' || mode === 'fac' ? <View style={{ paddingHorizontal: 14, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Txt s={13} c={color.sub}>운동기구·벤치·자전거 등 모두 표시</Txt><Switch accessibilityLabel="모든 시설 표시" value={allFacilities} onValueChange={setAllFacilities} /></View> : null}
         {mode === 'issue' ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10, minHeight: 40, paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: color.line }}>
             <Txt w={700} s={13} c={color.sub}>지난 기록 포함</Txt>
@@ -356,7 +359,8 @@ function SimpleMap({ onFull }: { onFull: () => void }) {
   const [old, setOld] = useState(false);
   const [here, setHere] = useState<Here>(null);
   const [course, setCourse] = useState<string | null>(null);
-  const x = useItems(old);
+  const [allFacilities, setAllFacilities] = useState(false);
+  const x = useItems(old, allFacilities);
   const sc = x.courses.find(c => c.id === course) ?? x.courses[0];
   const items = pur === 'course' ? x.courses : pur === 'fac' ? x.facs : [...x.issues, ...x.routines];
   const d = (i: Item) => nearestM(here, pur === 'course' ? [i.at] : i.pts);
@@ -384,6 +388,7 @@ function SimpleMap({ onFull }: { onFull: () => void }) {
         </View>
       )}
       <MapArt paths={x.paths} courses={pur === 'course' ? x.courses : []} sel={pur === 'course' ? sc?.key ?? null : null} pins={pur === 'course' ? [] : items} here={here} />
+      {pur === 'fac' ? <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Txt s={14}>모든 시설 표시</Txt><Switch accessibilityLabel="모든 시설 표시" value={allFacilities} onValueChange={setAllFacilities} /></View> : null}
       <Txt s={14} c={color.sub}>{pur === 'course' ? `${sc?.title ?? ''} · 라임 점 출발 · 남색 점 반환점` : [here ? '파란 점이 내 위치' : '파일럿 구간 하천', pur === 'issue' && old ? '회색 점은 지난 기록' : ''].filter(Boolean).join(' · ')}</Txt>
       <Btn kind="line" big icon="map" label="지도 크게 보기" onPress={onFull} />
       {here ? <Micro>거리는 길찾기 거리가 아니라 직선거리예요.</Micro> : null}

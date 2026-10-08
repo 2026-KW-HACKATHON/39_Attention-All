@@ -85,11 +85,10 @@ test('account change while quick is in flight cannot persist the previous accoun
   assert.equal(saved?.book.quick, undefined); assert.equal(saved?.quick ?? null, null);
   assert.equal(h.acks.at(-1)?.code, 'ACCOUNT_CHANGED');
 });
-test('background START waits for phone confirmation and then uses the existing preparation route', async () => {
+test('background START goes directly to preparation when phone becomes active without an extra confirmation', async () => {
   const h = harness({ initialRun: null, active: false }); await h.flush(); await h.dispatch({ type: 'START' });
   assert.deepEqual(h.routes, []); assert.deepEqual(h.calls, []);
-  h.app('active'); await h.flush(); assert.equal(h.alerts.length, 1);
-  h.alerts[0].buttons[1].onPress?.(); await h.flush();
+  h.app('active'); await h.flush(); assert.equal(h.alerts.length, 0);
   assert.equal((h.routes[0] as { pathname: string }).pathname, '/run-ready'); assert.deepEqual(h.calls, []);
 });
 test('photo command duplicate opens the same capture route once and never submits on receipt', async () => {

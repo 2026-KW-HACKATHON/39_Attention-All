@@ -93,6 +93,7 @@ export type RunInput = {
 export type SnapshotInput = {
   uid: string | null; needs: string[]; run: RunInput | null; exposure: ExposureView | null; quick: QuickView | null; photo: PhotoView | null;
   last: Summary | null; participations: number | null;
+  preparation?: { phase: string; count: number; outside: boolean; error: string | null; mode: 'RUN' | 'WALK' } | null;
 };
 
 // 워치 스냅샷(epoch·revision은 네이티브가 붙인다). 계정이 없으면 운동·결과를 넣지 않는다.
@@ -115,13 +116,14 @@ export function buildSnapshot(i: SnapshotInput, now: number) {
     quick: i.uid ? i.quick : null,
     photo: i.uid ? i.photo : null,
     last: i.uid ? i.last : null,
+    preparation: i.uid && !r ? i.preparation ?? null : null,
   };
 }
 
 // 바로 보낼 변화(상태·체크포인트·응답·촬영 단계·계정)를 가르는 키. 거리·시간만 바뀌면 간격을 둔다(시간은 워치가 보간).
 export function eventKey(s: ReturnType<typeof buildSnapshot>) {
   const x = s.session;
-  return JSON.stringify([s.account, x && [x.sessionId, x.status, x.sync, x.problem, x.result], s.exposure && [s.exposure.id, s.exposure.answerable], s.quick, s.photo, s.last]);
+  return JSON.stringify([s.account, x && [x.sessionId, x.status, x.sync, x.problem, x.result], s.exposure && [s.exposure.id, s.exposure.answerable], s.quick, s.photo, s.last, s.preparation]);
 }
 export const publishDue = (prev: { key: string; at: number } | null, key: string, now: number, watchVisible: boolean) =>
   !prev || prev.key !== key || now - prev.at >= (watchVisible ? VISIBLE_INTERVAL_MS : HIDDEN_INTERVAL_MS);

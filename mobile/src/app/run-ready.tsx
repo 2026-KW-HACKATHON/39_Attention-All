@@ -20,6 +20,7 @@ import { Btn, Micro, Notice, Num, Screen, SecTitle, Txt } from "../ui";
 import { MODE_LABEL } from "../content";
 import { color } from "../theme";
 import { errorText } from "../core";
+import { setWearPreparation } from "../wear";
 
 export default function RunReady() {
   const router = useRouter(),
@@ -36,6 +37,7 @@ export default function RunReady() {
   });
   const [prep] = useState(() =>
     createPreparation({
+      autoStart: true,
       uid: getUid,
       now: Date.now,
       locate: preciseLoc,
@@ -51,7 +53,10 @@ export default function RunReady() {
       ], { cancelable: true, onDismiss: () => resolve(false) })),
       start: (loc, uid, allowOutsidePilot) => startRun(mode, courseId, { loc, uid, allowOutsidePilot }),
       delay: () => new Promise<void>((r) => setTimeout(r, 1000)),
-      changed: setState,
+      changed: (s) => {
+        setState(s);
+        setWearPreparation({ phase: s.phase, count: s.count, outside: !!s.outside, error: s.error, mode });
+      },
     }),
   );
   const focused = useIsFocused();
@@ -79,7 +84,7 @@ export default function RunReady() {
       return;
     }
     void prep.prepare();
-    return () => { prep.cancel(); };
+    return () => { prep.cancel(); setWearPreparation(null); };
   }, [prep, router]);
   // Replacing navigation subscriptions must not cancel an in-flight GPS request.
   // Only actual route departure, unmount or app background cancels preparation.
@@ -94,7 +99,6 @@ export default function RunReady() {
     const app = AppState.addEventListener("change", (s) => prep.appStateChanged(s));
     return () => app.remove();
   }, [prep]);
-  const begin = () => prep.begin();
   const close = () => {
     if (prep.cancel()) router.back();
   };
@@ -157,9 +161,6 @@ export default function RunReady() {
                 }))
           }
         />
-      ) : null}
-      {state.phase === "ready" ? (
-        <Btn kind="blue" label="3초 후 시작" onPress={() => void begin()} />
       ) : null}
       {!busy && state.phase !== "ready" && state.phase !== "done" ? (
         <Btn

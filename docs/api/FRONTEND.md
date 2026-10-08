@@ -300,3 +300,7 @@ getMy 추가 `participationStats:{total,report,recheck,routine,recheckPhoto,rech
 공개 사본 경로는 관리자 UID와 요청 전체의 해시를 포함하며, Storage의 생성 전용 조건으로 덮어쓰기를 방지한다. 동시 요청 충돌로 연결되지 않은 사본은 해당 사진 기록이 삭제된 뒤, 파일 생성으로부터 최소 1시간 경과한 경우 정리 스케줄에서 삭제한다. 사진 기록이 남아 있는 동안에는 재시도와 삭제의 충돌을 방지하기 위해 그 사진의 사본 경로를 보호한다. 동일 요청의 진행 중 사본을 지우지 않기 위해 실패 직후에는 삭제하지 않는다.
 
 웹 연결 화면은 미전송 GPS 요청을 계정별 localStorage에 보관하고 같은 요청 ID로 재전송한다. 로그아웃·계정 전환 시 지우며 저장소 접근 실패는 운동 화면에 표시한다. 탭을 다시 열면 getMy.activeSession → getRunDetail로 서버 기록과 대기 요청을 복구한다.
+
+## 관리자 대시보드
+
+`getAdminDashboard`는 관리자 인증 후 호출하며 제보·사진·쿠폰 통계 및 목록을 반환합니다. `limit`, `table`(issues/photos/coupons), `cursor`로 각 목록을 조회합니다. `adminLogin`은 아이디·비밀번호를 확인하고 관리자 custom token을 반환하는 별도 로그인 API입니다. 서버 환경변수 `UIRUN_ADMIN_ID`, `UIRUN_ADMIN_PASSWORD`를 설정해야 하며, 미설정 시 로그인을 허용하지 않습니다. 운영 환경변수 파일은 Git에 포함하지 않습니다.

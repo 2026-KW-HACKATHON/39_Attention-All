@@ -8,6 +8,15 @@ import { errorText, type Failure } from './core';
 
 // 아이콘: 웹 index.html 스프라이트(24×24 선 아이콘)의 path를 그대로 옮겼다.
 const ICONS: Record<string, string> = {
+  bridge: '<path d="M3 17h18M5 17V7M19 17V7M5 8c3 7 11 7 14 0M9 12v5M15 12v5"/>',
+  'stepping-stones': '<rect x="2" y="14" width="5" height="4" rx="1"/><rect x="9" y="10" width="5" height="4" rx="1"/><rect x="16" y="6" width="5" height="4" rx="1"/>',
+  'emergency-exit': '<path d="M3 3h7v4M3 3v18h7v-4M14 4h.01M11 9l3-2 3 4h4M14 8l-2 6 4 3v4M12 14H8l-2 5M18 5h4M20 3l2 2-2 2"/>',
+  entrance: '<path d="M4 21V3h12v18M4 21h12M9 3v18M13 12h.01M18 12h5M20 9l3 3-3 3"/>',
+  fitness: '<path d="M3 8v8M6 6v12M18 6v12M21 8v8M6 12h12"/>',
+  shelter: '<path d="m3 10 9-7 9 7M5 10v11M19 10v11M8 16h8M9 16v5M15 16v5"/>',
+  construction: '<path d="M3 8h18v8H3zM6 8l8 8M12 8l8 8M6 16v5M18 16v5"/>',
+  cafe: '<path d="M4 8h12v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM16 9h2a3 3 0 0 1 0 6h-2M7 3v2M12 3v2"/>',
+
   home: '<path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/>',
   map: '<path d="M9 4 3.5 6.2V20L9 18l6 2 5.5-2.2V4L15 6z"/><path d="M9 4v14M15 6v14"/>',
   records: '<path d="M5 20v-8M12 20V5M19 20v-9"/>',
@@ -27,7 +36,7 @@ const ICONS: Record<string, string> = {
   coins: '<ellipse cx="9.5" cy="7" rx="5.5" ry="2.5"/><path d="M4 7v4c0 1.4 2.5 2.5 5.5 2.5S15 12.4 15 11V7"/><path d="M9 15.4V17c0 1.4 2.5 2.5 5.5 2.5S20 18.4 20 17v-4c0-1.4-2.5-2.5-5.5-2.5"/>',
   gift: '<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18M12 9v11M12 9c-1.5-3.5-5.5-4-5.5-1.5S9.5 9 12 9zm0 0c1.5-3.5 5.5-4 5.5-1.5S14.5 9 12 9z"/>',
   out: '<path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/>',
-  wc: '<path d="M7 4h4.5v6.5H7zM4.5 10.5h15A7.5 7.5 0 0 1 12 18a7.5 7.5 0 0 1-7.5-7.5zM9 18l-.8 2.5h7.6L15 18"/>',
+  wc: '<circle cx="6.5" cy="4" r="1.5"/><circle cx="17.5" cy="4" r="1.5"/><path d="M4 8h5v6H4zM5 14v7M8 14v7M16 8h3l2 7h-7zM16 15v6M19 15v6M12 3v18"/>',
   logout: '<path d="M10 5H5v14h5M14.5 8l4 4-4 4M18.5 12H9"/>',
   pause: '<rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>',

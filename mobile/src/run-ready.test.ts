@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createPreparation } from "./run-ready.ts";
+test('automatic preparation starts once after three countdown ticks without a second CTA', async () => {
+  let starts = 0, ticks = 0;
+  const p = createPreparation({ autoStart: true, uid: () => 'a', now: () => 1000,
+    locate: async () => ({ lat: 37.62, lng: 127.05, accuracyM: 8, measuredAt: 1000, precise: true }),
+    outsidePilot: async () => false, start: async () => { starts++; return { ok: true as const, value: 1 }; },
+    delay: async () => { ticks++; }, changed: () => {} });
+  await p.prepare();
+  assert.equal(p.state.phase, 'done'); assert.equal(ticks, 3); assert.equal(starts, 1);
+  await p.begin(); assert.equal(starts, 1);
+});
 const loc = (t = 1000) => ({
   lat: 37.62,
   lng: 127.05,

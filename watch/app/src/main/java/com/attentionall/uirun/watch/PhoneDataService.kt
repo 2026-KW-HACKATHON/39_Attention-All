@@ -12,7 +12,7 @@ import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import java.util.UUID
 
-// 워치 앱 화면이 없을 때 새 체크포인트를 알림(진동)으로 한 번만 알린다. 누르면 앱이 W3를 띄운다(10초는 그때부터).
+// 워치 앱 화면이 없을 때 새 체크포인트를 알림(진동)으로 한 번만 알린다. 누르면 앱이 W3를 띄운다(30초는 그때부터).
 // 알린 뒤 폰에 ALERT_SHOWN을 보내 폰이 같은 알림을 다시 울리지 않게 한다. 보내지 못하면 폰이 자기 알림으로 대신한다.
 class PhoneDataService : WearableListenerService() {
     override fun onDataChanged(events: DataEventBuffer) {

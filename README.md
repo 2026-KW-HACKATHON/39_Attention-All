@@ -8,6 +8,7 @@
 
 | 경로 | 용도 |
 |---|---|
+| `watch/` | Wear OS 동반 앱 및 폰 연결 |
 | `mobile/` | Expo Development Build 기반 React Native Android 앱 |
 | `backend/functions/` | Firebase Callable API, 사진 처리·정리 작업, 서버 테스트 |
 | `backend/client/` | 앱과 공유하는 연결 설정·점검 코드, API 호출 예시 |
@@ -57,4 +58,4 @@ Android 홈·지도·우리 우이천·운동·기록·사진 제보/재확인·
 - [서버 기능 검증](docs/api/FUNCTIONAL-VERIFICATION.md) · [부하 검증](docs/api/LOAD-VERIFICATION.md)
 - [API 명세](docs/api/FRONTEND.md) · [머신 판독 계약](docs/api/contracts.json)
 
-제휴점포·실제 혜택 재고, 약관·보존 정책과 릴리스 서명은 후속 확정 항목입니다. 사용자 해결 확인 보상, AI 이미지 분류, Wear OS는 현재 구현 범위에 포함되지 않습니다. [초기 기획·출처·팀 기록](docs/project/CONCEPT.md)의 기능·포인트 예시는 현재 API 계약을 대체하지 않습니다.
+제휴점포·실제 혜택 재고, 약관·보존 정책과 릴리스 서명은 후속 확정 항목입니다. 사용자 해결 확인 보상과 AI 이미지 분류는 현재 구현 범위에 포함되지 않습니다. Wear OS 동반 앱의 실행·검증 안내는 [워치 안내](watch/README.md)를 참고합니다. [초기 기획·출처·팀 기록](docs/project/CONCEPT.md)의 기능·포인트 예시는 현재 API 계약을 대체하지 않습니다.

@@ -14,6 +14,7 @@ export type PreparationState = {
   loc: Loc | null;
   error: string | null;
   uncertain: boolean;
+  outside?: boolean;
 };
 type Outcome<T> =
   | { ok: true; value: T }
@@ -28,6 +29,7 @@ type Dependencies<T> = {
   delay: () => Promise<void>;
   changed: (s: PreparationState) => void;
   timeoutMs?: number;
+  autoStart?: boolean;
 };
 export const usablePosition = (loc: Loc, now: number) =>
   Number.isFinite(loc.accuracyM) &&
@@ -101,6 +103,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         loc: null,
         count: 0,
         uncertain: false,
+        outside: false,
       });
       try {
         const result = await locate(g);
@@ -109,6 +112,7 @@ export function createPreparation<T>(deps: Dependencies<T>) {
         if ("ok" in result) return error(result.errorCode);
         if (!usablePosition(result, deps.now())) return error("LOCATION_STALE");
         publish({ phase: "ready", loc: result });
+        if (deps.autoStart) await this.begin();
       } catch {
         if (g === generation) error("LOCATION_UNAVAILABLE");
       }
@@ -133,10 +137,11 @@ export function createPreparation<T>(deps: Dependencies<T>) {
           if (g !== generation) return;
           if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
           if (outside) {
+            publish({ outside: true });
             const confirmed = await deps.confirmOutside?.();
             if (g !== generation) return;
             if (deps.uid() !== uid) return error("ACCOUNT_CHANGED");
-            if (!confirmed) { publish({ phase: "ready", count: 0 }); return; }
+            if (!confirmed) { publish({ phase: deps.autoStart ? "cancelled" : "ready", count: 0 }); return; }
             if (!foreground) return;
             allowOutsidePilot = true;
             // 확인 창을 오래 열어 두어도 오래된 위치로 시작하지 않는다.

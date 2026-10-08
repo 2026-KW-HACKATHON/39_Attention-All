@@ -76,10 +76,10 @@ private fun ack(id: String, status: String, code: String? = null, jsReady: Boole
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WatchControllerTest {
-    private fun TestScope.setup(visible: Boolean = true): Pair<WatchController, FakeLink> {
+    private fun TestScope.setup(visible: Boolean = true, onAlert: () -> Unit = {}): Pair<WatchController, FakeLink> {
         val link = FakeLink()
         var n = 0
-        val c = WatchController(link, backgroundScope, { testScheduler.currentTime }, { 0L }, AlertBook(), { "id${++n}" })
+        val c = WatchController(link, backgroundScope, { testScheduler.currentTime }, { 0L }, AlertBook(), { "id${++n}" }, onAlert)
         c.start()
         runCurrent()
         if (visible) c.setVisible(true)
@@ -88,11 +88,31 @@ class WatchControllerTest {
     }
 
     @Test
-    fun w3_stays_until_9999ms_and_returns_at_10s_without_submitting() = runTest {
+    fun preparation_snapshot_preserves_countdown_and_outside_state() {
+        val json = JSONObject(snap(1, status = null)).put("preparation",
+            JSONObject().put("phase", "countdown").put("count", 3)
+                .put("outside", true).put("mode", "RUN"))
+        val state = Snapshot.parse(json.toString())!!
+        assertNull(state.session)
+        assertEquals(Preparation("countdown", 3, true, null, "RUN"), state.preparation)
+        assertNull(Snapshot.parse(snap(2, status = null))!!.preparation)
+    }
+
+    @Test
+    fun foreground_alert_vibrates_once_per_exposure() = runTest {
+        var vibrations = 0
+        val (c, _) = setup(onAlert = { vibrations++ })
+        c.onSnapshot(snap(1, exposure = "ex1"))
+        c.onSnapshot(snap(2, exposure = "ex1"))
+        assertEquals(1, vibrations)
+    }
+
+    @Test
+    fun w3_stays_for_30s_without_submitting() = runTest {
         val (c, link) = setup()
         c.onSnapshot(snap(1, exposure = "ex1"))
         assertEquals(Screen.W3, c.ui.value.screen)
-        advanceTimeBy(9_999)
+        advanceTimeBy(W3_TIMEOUT_MS - 1)
         runCurrent()
         assertEquals(Screen.W3, c.ui.value.screen)
         advanceTimeBy(1)
@@ -110,7 +130,7 @@ class WatchControllerTest {
         c.onSnapshot(snap(2, exposure = "ex1", activeMs = 65_000))
         advanceTimeBy(4_000)
         c.onSnapshot(snap(3, exposure = "ex1", activeMs = 69_000))
-        advanceTimeBy(1_000)
+        advanceTimeBy(W3_TIMEOUT_MS - 9_000)
         runCurrent()
         assertEquals(Screen.W2, c.ui.value.screen)
         c.onSnapshot(snap(4, exposure = "ex1"))
@@ -118,7 +138,7 @@ class WatchControllerTest {
     }
 
     @Test
-    fun answering_before_10s_cancels_the_auto_return() = runTest {
+    fun answering_cancels_the_auto_return() = runTest {
         val (c, link) = setup()
         c.onSnapshot(snap(1, exposure = "ex1"))
         advanceTimeBy(3_000)

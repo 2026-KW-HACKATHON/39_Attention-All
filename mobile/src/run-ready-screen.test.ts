@@ -40,12 +40,12 @@ function harness() {
     'expo-router': { useRouter: () => router, useNavigation: () => nav, useLocalSearchParams: () => ({}), useIsFocused: () => focused,
       useFocusEffect: (fn: () => () => void) => hooks.useEffect(fn, [fn, nav]) },
     'expo-router/react-navigation': { usePreventRemove: () => {} },
-    '../firebase': { call: async () => ({ paths: [], participationRadiusM: 100 }) },
+    '../firebase': { call: async () => ({ paths: [{ points: [[37.62, 127.05], [37.6201, 127.05]] }], participationRadiusM: 100 }) },
     '../pilot-proximity': require('./pilot-proximity.ts'),
     '../run-ready': require('./run-ready.ts'),
     '../location': { preciseLoc: () => { requests++; return locating; } },
     '../session': { getUid: () => 'user' }, '../run': { getRun: () => null, startRun: () => {} },
-    '../start': { START_TEXT: {} }, '../notify': {}, '../ui': {}, '../content': { MODE_LABEL: { RUN: '달리기' } }, '../theme': { color: {} }, '../core': {},
+    '../wear': { setWearPreparation: () => {} }, '../start': { START_TEXT: {} }, '../notify': {}, '../ui': {}, '../content': { MODE_LABEL: { RUN: '달리기' } }, '../theme': { color: {} }, '../core': {},
   };
   const module = { exports: {} as { default: () => void } };
   const source = ts.transpileModule(readFileSync(new URL('./app/run-ready.tsx', import.meta.url), 'utf8'), {
@@ -69,7 +69,7 @@ test('navigation subscription replacement cannot cancel GPS or repeatedly restar
     h.replaceNavigation(); h.render();
     assert.equal(h.state().phase, 'locating'); assert.equal(h.requests(), 1);
     h.resolve(); await new Promise(r => setImmediate(r)); h.render();
-    assert.equal(h.state().phase, 'ready'); assert.equal(h.requests(), 1);
+    assert.equal(h.state().phase, 'countdown'); assert.equal(h.requests(), 1);
     h.blur(); assert.equal(h.state().phase, 'cancelled', 'actual route blur still cancels');
   } finally { h.dispose(); }
 });

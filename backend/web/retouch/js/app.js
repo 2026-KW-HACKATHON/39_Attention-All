@@ -102,6 +102,7 @@
   // ---------- 유틸 ----------
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const facilityIcon = type => ({ bridge: 'bridge', stepping_stones: 'stepping-stones', emergency_exit: 'emergency-exit', entrance: 'entrance', toilets: 'wc', fitness: 'fitness', bench: 'bench', bicycle_parking: 'bike', shelter: 'shelter', garden: 'leaf', photo_spot: 'camera', construction: 'construction', cafe: 'cafe' }[type] || 'map');
   const ic = (n, cls) => '<svg class="ic ' + (cls || '') + '" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
   const pad = n => String(n).padStart(2, '0');
   const kst = (t, o) => new Intl.DateTimeFormat('ko-KR', Object.assign({ timeZone: 'Asia/Seoul' }, o)).format(t);
@@ -554,7 +555,7 @@
   function listItems(mode) {
     const t = U.now(), l = U.loc(), d = pts => (l ? Pl.nearestM(l, pts) : 0);
     if (mode === 'course') return D.COURSES.map(c => ({ key: 'course:' + c.id, ic: 'route', title: c.name, meta: (c.distanceM / 1000).toFixed(1) + 'km 왕복 · ' + c.start + ' 출발', pts: [c.out[0]], dist: d([c.out[0]]) }));
-    if (mode === 'fac') return D.FACILITIES.map(f => ({ key: 'fac:' + f.id, ic: f.type === 'toilets' ? 'wc' : 'bike', title: f.name, meta: U.bankOf([f.lat, f.lng]), pts: [[f.lat, f.lng]], dist: d([[f.lat, f.lng]]) })).sort((a, b) => a.dist - b.dist);
+    if (mode === 'fac') return D.FACILITIES.map(f => ({ key: 'fac:' + f.id, ic: facilityIcon(f.type), title: f.name, meta: U.bankOf([f.lat, f.lng]), pts: [[f.lat, f.lng]], dist: d([[f.lat, f.lng]]) })).sort((a, b) => a.dist - b.dist);
     const iss = U.publicIssues().filter(is => S.mapOld || !U.issueOld(is, t))
       .map(is => ({ key: 'issue:' + is.id, ic: U.catIcon(is.categoryCode), title: CAT[is.categoryCode].label + (U.issueOld(is, t) ? ' · ' + U.oldLabel(is) : ''), meta: (CAT[is.categoryCode].scope === 'CORRIDOR' ? '하천' : '둑길') + ' · ' + (is.lastPhotoObservedAt ? '사진 ' + fmt.ago(is.lastPhotoObservedAt) : '사진 없음'), pts: is.observationAnchors, dist: d(is.observationAnchors) }));
     const rts = D.ROUTINES.map(r => { const st = Pl.routineState(S.db, 'me', r.id, t); return { key: 'routine:' + r.id, ic: 'repeat', title: '정기 관찰 · ' + r.name, meta: st.mine ? '이번 회차 참여함' : '이번 회차 참여 전', pts: r.anchors, dist: d(r.anchors) }; });
@@ -568,7 +569,7 @@
     const t = U.now();
     return '<div class="scroll pad"><h1 class="t-title">지도</h1><p class="notice err">' + ic('warn') + '지도 라이브러리를 불러오지 못했어요. 목록으로 볼 수 있어요.</p>' +
       '<h2 class="sec-title">관찰</h2><div class="rows">' + U.publicIssues().filter(is => !U.issueOld(is, t)).map(obsRow).join('') + '</div>' +
-      '<h2 class="sec-title">시설</h2><div class="rows">' + D.FACILITIES.map(f => '<button class="row" data-act="facility" data-id="' + f.id + '"><span class="row-main"><b>' + f.name + '</b><span>OSM 등록 위치</span></span>' + ic('chev') + '</button>').join('') + '</div></div>';
+      '<h2 class="sec-title">시설</h2><div class="rows">' + D.FACILITIES.map(f => '<button class="row" data-act="facility" data-id="' + f.id + '"><span class="row-main"><b>' + f.name + '</b><span>현장 조사 · 네이버 저장 위치</span></span>' + ic('chev') + '</button>').join('') + '</div></div>';
   }
   function mapCard(sel) {
     const [kind, id] = sel.split(':'), t = U.now();
@@ -591,7 +592,7 @@
       title = '정기 관찰 · ' + esc(r.name); act = 'routine'; meta = esc(r.bankLabel) + near(r.anchors) + ' · ' + (st.mine ? '이번 회차 참여함' : '이번 회차 참여 전');
     } else {
       const f = D.FACILITIES.find(x => x.id === id);
-      title = f.name; act = 'facility'; meta = U.bankOf([f.lat, f.lng]) + near([[f.lat, f.lng]]) + ' · OSM 등록 위치';
+      title = f.name; act = 'facility'; meta = U.bankOf([f.lat, f.lng]) + near([[f.lat, f.lng]]) + ' · 현장 조사 · 네이버 저장 위치';
     }
     return '<div class="map-sheet" role="region" aria-label="선택한 항목"><div class="ms-head">' + thumb + '<div><h2>' + title + '</h2><p>' + meta + '</p></div>' + close + '</div>' +
       '<button class="btn btn-blue" data-act="' + act + '" data-id="' + id + '">자세히 보기</button></div>';
@@ -658,7 +659,7 @@
       }
       if (showF) D.FACILITIES.forEach(f => { // 시설: 밝은 바탕의 각진 표시 + 아이콘. 보이는 크기와 별개로 44px 터치 영역
         const on = sel === 'fac:' + f.id;
-        L.marker([f.lat, f.lng], { title: f.name, zIndexOffset: on ? 3000 : -200, icon: icon('<div class="mk-fac' + (on ? ' sel' : '') + '"><i>' + ic(f.type === 'toilets' ? 'wc' : 'bike') + '</i></div>', [44, 44]) }).on('click', pick('fac:' + f.id)).addTo(g);
+        L.marker([f.lat, f.lng], { title: f.name, zIndexOffset: on ? 3000 : -200, icon: icon('<div class="mk-fac' + (on ? ' sel' : '') + '"><i>' + ic(facilityIcon(f.type)) + '</i></div>', [44, 44]) }).on('click', pick('fac:' + f.id)).addTo(g);
       });
       if (showI) {
         const old = mode === 'issue' && S.mapOld, items = [];
@@ -742,7 +743,7 @@
     const pub = U.publicIssues().filter(is => S.mapOld || !U.issueOld(is, t));
     let items;
     if (pur === 'course') items = D.COURSES.map(c => ({ ic: 'route', title: c.name, kind: (c.distanceM / 1000).toFixed(1) + 'km 왕복', d: dist([c.out[0]]), dTo: '출발점까지 ', act: 'course-info', id: c.id, label: '코스 정보', pick: true }));
-    else if (pur === 'fac') items = D.FACILITIES.map(f => ({ ic: f.type === 'toilets' ? 'wc' : 'bike', title: f.name, kind: '시설', d: dist([[f.lat, f.lng]]), act: 'fac-map', id: f.id, label: '위치 보기' }));
+    else if (pur === 'fac') items = D.FACILITIES.map(f => ({ ic: facilityIcon(f.type), title: f.name, kind: '시설', d: dist([[f.lat, f.lng]]), act: 'fac-map', id: f.id, label: '위치 보기' }));
     else items = pub.map(is => ({ ic: U.catIcon(is.categoryCode), title: CAT[is.categoryCode].label, kind: (U.issueOld(is, t) ? U.oldLabel(is) + ' · ' : '') + (is.lastPhotoObservedAt ? '사진 ' + fmt.ago(is.lastPhotoObservedAt) : '사진 없음'), d: dist(is.observationAnchors), act: 'issue', id: is.id, label: '자세히' }))
       .concat(D.ROUTINES.map(r => ({ ic: 'repeat', title: r.name, kind: '정기 관찰', d: dist(r.anchors), act: 'routine', id: r.id, label: '자세히' })));
     if (ref && pur !== 'course') items.sort((a, b) => a.d - b.d);

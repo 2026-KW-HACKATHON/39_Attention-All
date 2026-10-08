@@ -19,7 +19,7 @@ const READS = [
   "getBenefits",
   "getSettings",
   "getPilotData",
-  "getWorkoutStats", "getAdminQueue", "getAdminIssue", "getDeletionJob",
+  "getWorkoutStats", "getAdminDashboard", "getAdminQueue", "getAdminIssue", "getDeletionJob",
 ];
 const POLICY = [
   "submitQuick",
@@ -151,6 +151,16 @@ function readModel(d, auth, name, data = {}, now = Date.now()) {
     return job ? { status: job.status, createdAt: job.createdAt, dataCleaned: !!job.dataCleaned } : { status: "NONE" };
   }
   if (uid && d.deletionJobs[uid]) V.fail("ACCOUNT_DELETING");
+  if (name === "getAdminDashboard") {
+    if (!auth.admin) V.fail("PERMISSION_DENIED");
+    const issues = Object.values(d.issues).filter(i=>!d.deletionJobs[i.creatorUid]);
+    const photos = Object.values(d.photos).filter(p=>!d.deletionJobs[p.uid]&&p.status!=="DELETE_PENDING");
+    const coupons = d.coupons.filter(c=>!d.deletionJobs[c.uid]).map(c=>({...c,status:P.couponView(c,now),displayName:d.users[c.uid]?.displayName||c.uid}));
+    return {updatedAt:now,stats:{issues:issues.length,pendingIssues:issues.filter(i=>i.visibility==="PUBLIC"&&(i.verificationLevel||"NONE")==="NONE").length,photos:photos.length,coupons:coupons.length,usedCoupons:coupons.filter(c=>c.status==="USED").length,availableCoupons:coupons.filter(c=>c.status==="ISSUED").length},
+      issues:page(issues.map(i=>({...issueDTO(d,i,now),creatorUid:i.creatorUid})),data.table&&data.table!=="issues"?{limit:data.limit}:data),
+      photos:page(photos.map(p=>({id:p.id,issueId:p.issueId||null,uid:p.uid,status:p.status,createdAt:p.createdAt||p.capturedAt||0,publicApproved:p.publicApproved===true})),data.table&&data.table!=="photos"?{limit:data.limit}:data),
+      coupons:page(coupons,data.table&&data.table!=="coupons"?{limit:data.limit}:data),audits:page(Object.values(d.adminAudits),{limit:data.limit},"at")};
+  }
   if (["getAdminQueue", "getAdminIssue"].includes(name)) {
     if (!auth.admin) V.fail("PERMISSION_DENIED");
     if (name === "getAdminQueue") return {

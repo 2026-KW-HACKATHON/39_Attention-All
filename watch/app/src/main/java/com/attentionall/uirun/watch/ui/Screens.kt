@@ -75,7 +75,18 @@ fun WatchApp(ui: Ui, c: WatchController) {
     if (ui.screen in BACKABLE) BackHandler { c.back() }
     CompositionLocalProvider(LocalDemo provides ui.demo) {
     Box(Modifier.fillMaxSize().background(Brand.black)) {
-        when (ui.screen) {
+        val prep = ui.snap?.preparation?.takeIf { ui.snap?.session == null && it.phase !in listOf("idle", "done", "cancelled") }
+        if (prep != null) {
+            Face(f, small = if (prep.mode == "WALK") "산책 준비" else "달리기 준비",
+                title = when (prep.phase) {
+                    "locating" -> "위치 확인 중"
+                    "confirming" -> if (prep.outside) "우이천 바깥이에요" else "시작 위치 확인 중"
+                    "countdown" -> "${prep.count}초 후 시작"
+                    "starting" -> "운동 시작 중"
+                    "error" -> "위치 확인이 필요해요"
+                    else -> "시작 준비 완료"
+                }, body = if (prep.phase == "error") "폰에서 확인해주세요" else if (prep.outside && prep.phase == "confirming") "폰에서 참여 제한 안내를 확인해주세요" else if (prep.outside) "우이천 바깥 · 제보 참여 제한" else "폰에서 확인 중 · 잠시 기다려주세요") {}
+        } else when (ui.screen) {
             Screen.W0 -> Ready(ui, c, f)
             Screen.W1 -> Choose(ui, c, f)
             Screen.W2 -> Running(ui, c, f)
@@ -195,7 +206,7 @@ private fun Checkpoint(ui: Ui, c: WatchController, f: Fonts) {
     val body = when {
         expired -> "응답 시간이 지났어요"
         !ex.answerable -> "${ex.radiusM}m 안에서 ‘아직 있어요’를 남길 수 있어요"
-        else -> "미선택 시 10초 뒤 운동 복귀"
+        else -> "미선택 시 30초 뒤 운동 복귀"
     }
     Face(f, small = "체크포인트" + (ex.distanceM?.let { " · ${it}m" } ?: ""), smallColor = Brand.lime, title = ex.title.ifEmpty { "체크포인트" }, body = body, notice = noticeText(ui.notice)) {
         Action("아직 있어요", f, enabled = ex.answerable && !expired) { c.answer("PRESENT") }

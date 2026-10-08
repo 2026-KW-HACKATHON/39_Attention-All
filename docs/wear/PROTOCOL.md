@@ -38,6 +38,10 @@ MessageClient 전송 성공은 "폰 기기에 전달됨"일 뿐 폰 운동 처�
   "revision": 418,              // 순번(네이티브가 붙임, 앱 재시작에도 줄지 않음)
   "observedAt": 1791301234567,  // 폰 시각(표시용만)
   "account": { "signedIn": true, "needs": [] },   // needs: LOGIN | CONSENT | LOCATION_PERMISSION | PRECISE_LOCATION
+  "preparation": null | {        // 운동 시작 전 폰의 위치 확인·바깥 안내·카운트다운
+    "phase": "locating|ready|confirming|countdown|starting|error|cancelled|done",
+    "count": 3, "outside": false, "error": null, "mode": "RUN|WALK"
+  },
   "session": null | {
     "sessionId": "…", "status": "ACTIVE|PAUSED|ENDING|ENDED", "mode": "RUN|WALK",
     "distanceM": 2840.5,        // 폰 엔진 화면 거리(localM, 서버와 같은 유효 구간 규칙). ENDED면 서버 결과
@@ -119,8 +123,8 @@ MessageClient 전송 성공은 "폰 기기에 전달됨"일 뿐 폰 운동 처�
 - **현재 서버 `submitQuick`은 ‘지금도 보여요’(PRESENT)만 받는다**(`{issueId,loc,sessionId?,exposureId?}`, 응답 종류 필드 없음). 폰은 PRESENT만 `quickFromExposure`(폰 알림 카드와 같은 함수·같은 요청 슬롯)로 제출한다.
 - `ABSENT`·`UNKNOWN`은 **제출하지 않고** `quick.state = UNSUPPORTED`, ACK `REJECTED/ANSWER_NOT_SUPPORTED`. PRESENT로 바꿔 보내지 않는다. 워치는 "아직 받지 않는 응답이에요"로 안내하고 저장 성공으로 표시하지 않는다. 개발 DEMO 데이터에서만 세 응답 모두 결과 화면까지 보인다.
 - 만료된 노출은 워치에서 W3 남은 시간과 관계없이 제출하지 않고, 폰도 `EXPOSURE_EXPIRED`로 거절한다.
-- W3 10초 타이머는 최초 표시 시각 기준이며 스냅샷 갱신·재구성으로 늘어나지 않는다. 화면을 떠나면 취소된다. **시간 초과는 무응답**이며 아무것도 보내지 않는다.
-- 정기 관찰(ROUTINE) 노출은 상태 응답이 없으므로 W3 대신 바로 사진 선택(W4-B "사진을 남길까요?")을 같은 10초 규칙으로 보여준다.
+- W3 30초 타이머는 최초 표시 시각 기준이며 스냅샷 갱신·재구성으로 늘어나지 않는다. 화면을 떠나면 취소된다. **시간 초과는 무응답**이며 아무것도 보내지 않는다.
+- 정기 관찰(ROUTINE) 노출은 상태 응답이 없으므로 W3 대신 바로 사진 선택(W4-B "사진을 남길까요?")을 같은 30초 규칙으로 보여준다.
 - QUICK은 사진 신선도·PEER·Welcome·사진 Mission을 바꾸지 않는다(서버 기존 규칙). 보상은 서버 응답값만.
 
 ## 7. 앱 안 촬영 연결(handoff)
